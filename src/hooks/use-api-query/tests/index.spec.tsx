@@ -1,0 +1,538 @@
+import React from 'react'
+
+import {cleanup} from '@testing-library/react'
+import {act, renderHook} from '@testing-library/react-hooks'
+
+import {useApiQuery} from '../'
+import {Api} from '../../../api'
+import {ApiError} from '../../../api/errors'
+import {ApiRequestFetchPolicy, IApiRequestParams} from '../../../api/typings'
+import {ApiProvider} from '../../context'
+
+let api: Api
+
+afterEach(cleanup)
+
+beforeEach(() => {
+  api = {
+    defaultFetchPolicy: 'no-cache',
+    onCacheUpdate: jest.fn(() => () => null),
+    readCachedResponse: jest.fn(),
+    writeCachedResponse: jest.fn(),
+    request: jest.fn()
+  } as any
+})
+
+const wrapper = ({children}) => (
+  <ApiProvider value={api}>{children}</ApiProvider>
+)
+
+it('does not make a query if there are no params', () => {
+  const {result} = renderHook(() => useApiQuery(null), {wrapper})
+  expect(result.current[0]).toEqual({
+    data: null,
+    loading: false,
+    error: null
+  })
+
+  // ensure it doesn't subscribe to updates
+  expect(api.onCacheUpdate).not.toBeCalled()
+})
+
+it('loads api data', async () => {
+  const response = {name: 'Test'}
+  ;(api.request as jest.Mock).mockResolvedValue(response)
+
+  const {result, waitForNextUpdate} = renderHook(
+    () => useApiQuery({method: 'GET', url: '/endpoint'}),
+    {wrapper}
+  )
+
+  expect(result.current[0]).toEqual({
+    data: null,
+    loading: true,
+    error: null
+  })
+
+  await waitForNextUpdate()
+
+  expect(result.current[0]).toEqual({
+    data: response,
+    loading: false,
+    error: null
+  })
+})
+
+it('returns api errors', async () => {
+  const error = new ApiError(400, {error: true}, 'json')
+  ;(api.request as jest.Mock).mockRejectedValue(error)
+
+  const {result, waitForNextUpdate} = renderHook(
+    () => useApiQuery({method: 'GET', url: '/endpoint'}),
+    {wrapper}
+  )
+
+  await waitForNextUpdate()
+
+  expect(result.current[0]).toEqual({
+    data: null,
+    loading: false,
+    error
+  })
+})
+
+it('makes a new request if params change', async () => {
+  const response1 = {name: 'Test'}
+  ;(api.request as jest.Mock).mockResolvedValue(response1)
+
+  const {result, waitForNextUpdate, rerender} = renderHook(
+    (props: {url: string}) => useApiQuery({method: 'GET', url: props.url}),
+    {wrapper, initialProps: {url: '/endpoint1'}}
+  )
+
+  await waitForNextUpdate()
+
+  expect(result.current[0]).toEqual({
+    data: response1,
+    loading: false,
+    error: null
+  })
+
+  const response2 = {name: 'Test2'}
+  ;(api.request as jest.Mock).mockResolvedValue(response2)
+
+  // reload
+  rerender({url: '/endpoint2'})
+
+  expect(result.current[0]).toEqual({
+    data: null,
+    loading: true,
+    error: null
+  })
+
+  await waitForNextUpdate()
+
+  // should get response2
+  expect(result.current[0]).toEqual({
+    data: response2,
+    loading: false,
+    error: null
+  })
+})
+
+it('can disable reinitialization of data between successive requests', async () => {
+  const response1 = {name: 'Test'}
+  ;(api.request as jest.Mock).mockResolvedValue(response1)
+
+  const {result, waitForNextUpdate, rerender} = renderHook(
+    (props: {url: string}) =>
+      useApiQuery({method: 'GET', url: props.url}, {dontReinitialize: true}),
+    {wrapper, initialProps: {url: '/endpoint1'}}
+  )
+
+  await waitForNextUpdate()
+
+  expect(result.current[0]).toEqual({
+    data: response1,
+    loading: false,
+    error: null
+  })
+
+  const response2 = {name: 'Test2'}
+  ;(api.request as jest.Mock).mockResolvedValue(response2)
+
+  // reload
+  rerender({url: '/endpoint2'})
+
+  expect(result.current[0]).toEqual({
+    data: response1, // ie not `null`
+    loading: true,
+    error: null
+  })
+
+  await waitForNextUpdate()
+
+  // should get response2
+  expect(result.current[0]).toEqual({
+    data: response2,
+    loading: false,
+    error: null
+  })
+})
+
+describe('cache', () => {
+  it('initializes the data to null if there is no cached value for a cache-first policy', async () => {
+    const params: IApiRequestParams = {method: 'GET', url: '/endpoint'}
+    const response = {name: 'Test'}
+    const cacheFirstPolicies: ApiRequestFetchPolicy[] = [
+      'cache-first',
+      'cache-only',
+      'cache-and-fetch'
+    ]
+
+    for (const fetchPolicy of cacheFirstPolicies) {
+      ;(api.request as jest.Mock).mockResolvedValue(response)
+      ;(api.readCachedResponse as jest.Mock).mockReturnValue(null)
+
+      const {result, waitForNextUpdate} = renderHook(
+        () => useApiQuery(params, {fetchPolicy}),
+        {wrapper}
+      )
+
+      expect(api.readCachedResponse).toBeCalledWith(params)
+
+      expect(result.current[0]).toEqual({
+        data: null,
+        loading: true,
+        error: null
+      })
+
+      if (fetchPolicy !== 'cache-only') {
+        // eslint-disable-next-line
+        await waitForNextUpdate()
+
+        expect(result.current[0]).toEqual({
+          data: response,
+          loading: false,
+          error: null
+        })
+
+        expect(api.request).toBeCalledWith(params, {fetchPolicy})
+      }
+    }
+  })
+
+  it('initializes data to the cached value if its a cache-first policy', async () => {
+    const params: IApiRequestParams = {method: 'GET', url: '/endpoint'}
+    const response = {name: 'Test'}
+    const cacheFirstPolicies: ApiRequestFetchPolicy[] = [
+      'cache-first',
+      'cache-only',
+      'cache-and-fetch'
+    ]
+
+    for (const fetchPolicy of cacheFirstPolicies) {
+      ;(api.request as jest.Mock).mockResolvedValue(response)
+      ;(api.readCachedResponse as jest.Mock).mockReturnValue(response)
+
+      const {result, waitForNextUpdate} = renderHook(
+        () => useApiQuery(params, {fetchPolicy}),
+        {wrapper}
+      )
+
+      expect(api.readCachedResponse).toBeCalledWith(params)
+
+      expect(result.current[0]).toEqual({
+        data: response,
+        loading: true,
+        error: null
+      })
+
+      if (fetchPolicy !== 'cache-only') {
+        // eslint-disable-next-line
+        await waitForNextUpdate()
+
+        expect(result.current[0]).toEqual({
+          data: response,
+          loading: false,
+          error: null
+        })
+
+        expect(api.request).toBeCalledWith(params, {fetchPolicy})
+      }
+    }
+  })
+
+  it('does not initialize to the cached value if its a fetch-first policy', async () => {
+    const params: IApiRequestParams = {method: 'GET', url: '/endpoint'}
+    const response = {name: 'Test'}
+    const fetchFirstPolicies: ApiRequestFetchPolicy[] = [
+      'no-cache',
+      'fetch-first'
+    ]
+
+    for (const fetchPolicy of fetchFirstPolicies) {
+      ;(api.request as jest.Mock).mockResolvedValue(response)
+
+      const {result, waitForNextUpdate} = renderHook(
+        () => useApiQuery(params, {fetchPolicy}),
+        {wrapper}
+      )
+
+      expect(result.current[0]).toEqual({
+        data: null,
+        loading: true,
+        error: null
+      })
+
+      // eslint-disable-next-line
+      await waitForNextUpdate()
+
+      expect(result.current[0]).toEqual({
+        data: response,
+        loading: false,
+        error: null
+      })
+    }
+  })
+
+  it('updates data on to api cache updates', async () => {
+    const params: IApiRequestParams = {method: 'GET', url: '/endpoint'}
+    const response = {name: 'Test'}
+
+    const fetchPolicies: ApiRequestFetchPolicy[] = [
+      'cache-first',
+      'cache-only',
+      'cache-and-fetch',
+      'no-cache',
+      'fetch-first'
+    ]
+    ;(api.request as jest.Mock).mockResolvedValue(response)
+
+    for (const fetchPolicy of fetchPolicies) {
+      // set up onCacheUpdate listener
+      let listener
+      const unsubscribe = jest.fn()
+      const onCacheUpdate = jest.fn((params, _listener) => {
+        listener = _listener
+        return unsubscribe
+      })
+      ;(api.onCacheUpdate as jest.Mock) = onCacheUpdate
+
+      const {result, waitForNextUpdate} = renderHook(
+        () => useApiQuery(params, {fetchPolicy}),
+        {wrapper}
+      )
+
+      expect(result.current[0]).toEqual({
+        data: null,
+        loading: true,
+        error: null
+      })
+
+      // eslint-disable-next-line
+      await waitForNextUpdate()
+
+      expect(result.current[0]).toEqual({
+        data: response,
+        loading: false,
+        error: null
+      })
+
+      expect(api.request).toBeCalledWith(params, {fetchPolicy})
+
+      expect(onCacheUpdate).toBeCalledWith(params, listener)
+
+      const response2 = {name: 'Test 2'}
+      act(() => {
+        listener(response2)
+      })
+
+      expect(result.current[0]).toEqual({
+        data: response2,
+        loading: false,
+        error: null
+      })
+    }
+  })
+})
+
+describe('refetch', () => {
+  it('refetches data', async () => {
+    const params: IApiRequestParams = {method: 'GET', url: '/endpoint'}
+    const fetchPolicies: ApiRequestFetchPolicy[] = [
+      null,
+      'cache-first',
+      'cache-only',
+      'cache-and-fetch',
+      'no-cache',
+      'fetch-first'
+    ]
+
+    for (const fetchPolicy of fetchPolicies) {
+      const response1 = {name: 'Test'}
+      ;(api.request as jest.Mock).mockResolvedValue(response1)
+
+      const {result, waitForNextUpdate} = renderHook(
+        () => useApiQuery(params, {fetchPolicy}),
+        {wrapper}
+      )
+
+      // eslint-disable-next-line
+      await waitForNextUpdate()
+
+      expect(result.current[0]).toEqual({
+        data: response1,
+        loading: false,
+        error: null
+      })
+
+      const response2 = {name: 'Test2'}
+      ;(api.request as jest.Mock).mockClear()
+      ;(api.request as jest.Mock).mockResolvedValue(response2)
+
+      act(() => {
+        result.current[1].refetch()
+      })
+
+      expect(api.request).toBeCalledWith(params, {
+        fetchPolicy: ['no-cache', null].includes(fetchPolicy)
+          ? 'no-cache'
+          : 'fetch-first',
+        forceNewFetch: undefined
+      })
+
+      expect(result.current[0]).toEqual({
+        data: response1, // doesnt reinitialize by default
+        loading: true,
+        error: null
+      })
+
+      // eslint-disable-next-line
+      await waitForNextUpdate()
+
+      expect(result.current[0]).toEqual({
+        data: response2,
+        loading: false,
+        error: null
+      })
+    }
+  })
+
+  it('stores a refetch error', async () => {
+    const response1 = {name: 'Test'}
+    ;(api.request as jest.Mock).mockResolvedValue(response1)
+
+    const {result, waitForNextUpdate} = renderHook(
+      () => useApiQuery({method: 'GET', url: '/endpoint'}),
+      {wrapper}
+    )
+
+    await waitForNextUpdate()
+
+    const error = new ApiError(400, {error: true}, 'json')
+    ;(api.request as jest.Mock).mockRejectedValue(error)
+
+    act(() => {
+      result.current[1].refetch()
+    })
+
+    await waitForNextUpdate()
+
+    expect(result.current[0]).toEqual({
+      data: null,
+      loading: false,
+      error
+    })
+  })
+
+  it('can reinitialize data', async () => {
+    const response1 = {name: 'Test'}
+    ;(api.request as jest.Mock).mockResolvedValue(response1)
+
+    const {result, waitForNextUpdate} = renderHook(
+      () => useApiQuery({method: 'GET', url: '/endpoint'}),
+      {wrapper}
+    )
+
+    await waitForNextUpdate()
+
+    const response2 = {name: 'Test2'}
+    ;(api.request as jest.Mock).mockResolvedValue(response2)
+
+    act(() => {
+      result.current[1].refetch({reinitialize: true})
+    })
+
+    expect(result.current[0]).toEqual({
+      data: null, // reinitializes data
+      loading: true,
+      error: null
+    })
+
+    await waitForNextUpdate()
+
+    expect(result.current[0]).toEqual({
+      data: response2,
+      loading: false,
+      error: null
+    })
+  })
+})
+
+describe('setData', () => {
+  it('imperatively sets data directly if there is no cache', async () => {
+    const response = {name: 'Test'}
+    ;(api.request as jest.Mock).mockResolvedValue(response)
+    const fetchPolicies: ApiRequestFetchPolicy[] = [null, 'no-cache']
+
+    for (const fetchPolicy of fetchPolicies) {
+      ;(api.writeCachedResponse as jest.Mock).mockClear()
+
+      const {result, waitForNextUpdate} = renderHook(
+        () => useApiQuery({method: 'GET', url: '/endpoint'}, {fetchPolicy}),
+        {wrapper}
+      )
+
+      // eslint-disable-next-line
+      await waitForNextUpdate()
+
+      expect(result.current[0]).toEqual({
+        data: response,
+        loading: false,
+        error: null
+      })
+
+      const nextData = {next: 'data'}
+
+      act(() => {
+        result.current[1].setData(nextData)
+      })
+
+      expect(api.writeCachedResponse).not.toBeCalled()
+
+      expect(result.current[0]).toEqual({
+        data: nextData,
+        loading: false,
+        error: null
+      })
+    }
+  })
+
+  it('writes to the cache if fetchPolicy is not no-cache', async () => {
+    const params: IApiRequestParams = {method: 'GET', url: '/endpoint'}
+    const response = {name: 'Test'}
+    ;(api.request as jest.Mock).mockResolvedValue(response)
+    const fetchPolicies: ApiRequestFetchPolicy[] = [
+      'cache-first',
+      'cache-only',
+      'cache-and-fetch',
+      'fetch-first'
+    ]
+
+    for (const fetchPolicy of fetchPolicies) {
+      ;(api.writeCachedResponse as jest.Mock).mockClear()
+      const {result, waitForNextUpdate} = renderHook(
+        () => useApiQuery(params, {fetchPolicy}),
+        {wrapper}
+      )
+
+      // eslint-disable-next-line
+      await waitForNextUpdate()
+
+      expect(result.current[0]).toEqual({
+        data: response,
+        loading: false,
+        error: null
+      })
+
+      const nextData = {next: 'data'}
+
+      act(() => {
+        result.current[1].setData(nextData)
+      })
+
+      expect(api.writeCachedResponse).toBeCalledWith(params, nextData)
+    }
+  })
+})
