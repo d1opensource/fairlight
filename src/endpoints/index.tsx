@@ -182,7 +182,7 @@ export const restful = (BaseEndpoints: typeof HttpEndpoints) =>
      * Returns the path for a given resource id, as a convenience.
      */
     static pathToResource(id: ApiParam) {
-      return this.buildPath(this.singlePath(id))
+      return super.buildPath(this.singlePath(id))
     }
 
     /**
@@ -192,7 +192,7 @@ export const restful = (BaseEndpoints: typeof HttpEndpoints) =>
     protected static list<TResponseBody extends ResponseBody = ResponseBody>(
       query?: ApiQueryParams
     ) {
-      return this.get<TResponseBody>(this.collectionPath, {query})
+      return super.get<TResponseBody>(this.collectionPath, {query})
     }
 
     /**
@@ -201,7 +201,7 @@ export const restful = (BaseEndpoints: typeof HttpEndpoints) =>
     protected static create<TResponseBody extends ResponseBody = ResponseBody>(
       body?: RequestBody
     ) {
-      return this.post<TResponseBody>(this.collectionPath, {body})
+      return super.post<TResponseBody>(this.collectionPath, {body})
     }
 
     /**
@@ -210,7 +210,7 @@ export const restful = (BaseEndpoints: typeof HttpEndpoints) =>
     protected static findById<
       TResponseBody extends ResponseBody = ResponseBody
     >(id: ApiParam) {
-      return this.get<TResponseBody>(this.singlePath(id))
+      return super.get<TResponseBody>(this.singlePath(id))
     }
 
     /**
@@ -220,7 +220,7 @@ export const restful = (BaseEndpoints: typeof HttpEndpoints) =>
       id: ApiParam,
       body?: RequestBody
     ) {
-      return this.put<TResponseBody>(this.singlePath(id), {body})
+      return super.put<TResponseBody>(this.singlePath(id), {body})
     }
 
     /**
@@ -229,14 +229,14 @@ export const restful = (BaseEndpoints: typeof HttpEndpoints) =>
     protected static partialUpdate<
       TResponseBody extends ResponseBody = ResponseBody
     >(id: ApiParam, body?: RequestBody) {
-      return this.patch<TResponseBody>(this.singlePath(id), {body})
+      return super.patch<TResponseBody>(this.singlePath(id), {body})
     }
 
     /**
      * Performs a `DELETE` at `/:id`, using an optional request `body`
      */
     protected static delete(id: ApiParam, body?: RequestBody) {
-      return this.delete(this.singlePath(id), {body})
+      return super.delete(this.singlePath(id), {body})
     }
   }
 
