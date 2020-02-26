@@ -3,11 +3,11 @@ import React from 'react'
 import {cleanup} from '@testing-library/react'
 import {act, renderHook} from '@testing-library/react-hooks'
 
-import {useApiQuery} from '../'
-import {Api} from '../../../api'
-import {ApiError} from '../../../api/errors'
-import {ApiRequestFetchPolicy, IApiRequestParams} from '../../../api/typings'
-import {ApiProvider} from '../../context'
+import {Api} from '../../api'
+import {ApiError} from '../../api/errors'
+import {ApiRequestFetchPolicy, IApiRequestParams} from '../../api/typings'
+import {ApiProvider} from '../context'
+import {useApiQuery} from './'
 
 let api: Api
 

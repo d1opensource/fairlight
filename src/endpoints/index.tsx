@@ -126,7 +126,7 @@ export class HttpEndpoints {
    *
    * To customize query parameter serialization, override this in your base class.
    */
-  protected static serializeQuery(query: ApiQueryParams = {}): string {
+  protected static serializeQuery(query: ApiQueryParams): string {
     const queryWithoutEmptyValues = Object.entries(query).reduce(
       (prev, [key, value]) => {
         if (value !== undefined) {
@@ -170,75 +170,74 @@ export class HttpEndpoints {
   }
 }
 
-export const restful = (BaseEndpoints: typeof HttpEndpoints) =>
-  class RestEndpoints extends BaseEndpoints {
-    protected static collectionPath = ''
+export class RestEndpoints extends HttpEndpoints {
+  protected static collectionPath = ''
 
-    protected static singlePath(id: ApiParam) {
-      return dynamicPath('/:id', {id})
-    }
-
-    /**
-     * Returns the path for a given resource id, as a convenience.
-     */
-    static pathToResource(id: ApiParam) {
-      return super.buildPath(this.singlePath(id))
-    }
-
-    /**
-     * Performs a `GET` at `/`, appending an optional `query`
-     * @param query Query parameters
-     */
-    protected static list<TResponseBody extends ResponseBody = ResponseBody>(
-      query?: ApiQueryParams
-    ) {
-      return super.get<TResponseBody>(this.collectionPath, {query})
-    }
-
-    /**
-     * Performs a `POST` at `/`, using an optional request `body`
-     */
-    protected static create<TResponseBody extends ResponseBody = ResponseBody>(
-      body?: RequestBody
-    ) {
-      return super.post<TResponseBody>(this.collectionPath, {body})
-    }
-
-    /**
-     * Performs a `GET` at `/:id`
-     */
-    protected static findById<
-      TResponseBody extends ResponseBody = ResponseBody
-    >(id: ApiParam) {
-      return super.get<TResponseBody>(this.singlePath(id))
-    }
-
-    /**
-     * Performs a `PUT` at `/:id`, using an optional request `body`
-     */
-    protected static update<TResponseBody extends ResponseBody = ResponseBody>(
-      id: ApiParam,
-      body?: RequestBody
-    ) {
-      return super.put<TResponseBody>(this.singlePath(id), {body})
-    }
-
-    /**
-     * Performs a `PATCH` at `/:id`, using an optional request `body`
-     */
-    protected static partialUpdate<
-      TResponseBody extends ResponseBody = ResponseBody
-    >(id: ApiParam, body?: RequestBody) {
-      return super.patch<TResponseBody>(this.singlePath(id), {body})
-    }
-
-    /**
-     * Performs a `DELETE` at `/:id`, using an optional request `body`
-     */
-    protected static delete(id: ApiParam, body?: RequestBody) {
-      return super.delete(this.singlePath(id), {body})
-    }
+  protected static singlePath(id: ApiParam) {
+    return dynamicPath('/:id', {id})
   }
+
+  /**
+   * Returns the path for a given resource id, as a convenience.
+   */
+  static pathToResource(id: ApiParam) {
+    return super.buildPath(this.singlePath(id))
+  }
+
+  /**
+   * Performs a `GET` at `/`, appending an optional `query`
+   * @param query Query parameters
+   */
+  protected static list<TResponseBody extends ResponseBody = ResponseBody>(
+    query?: ApiQueryParams
+  ) {
+    return super.get<TResponseBody>(this.collectionPath, {query})
+  }
+
+  /**
+   * Performs a `POST` at `/`, using an optional request `body`
+   */
+  protected static create<TResponseBody extends ResponseBody = ResponseBody>(
+    body?: RequestBody
+  ) {
+    return super.post<TResponseBody>(this.collectionPath, {body})
+  }
+
+  /**
+   * Performs a `GET` at `/:id`
+   */
+  protected static findById<TResponseBody extends ResponseBody = ResponseBody>(
+    id: ApiParam
+  ) {
+    return super.get<TResponseBody>(this.singlePath(id))
+  }
+
+  /**
+   * Performs a `PUT` at `/:id`, using an optional request `body`
+   */
+  protected static update<TResponseBody extends ResponseBody = ResponseBody>(
+    id: ApiParam,
+    body?: RequestBody
+  ) {
+    return super.put<TResponseBody>(this.singlePath(id), {body})
+  }
+
+  /**
+   * Performs a `PATCH` at `/:id`, using an optional request `body`
+   */
+  protected static partialUpdate<
+    TResponseBody extends ResponseBody = ResponseBody
+  >(id: ApiParam, body?: RequestBody) {
+    return super.patch<TResponseBody>(this.singlePath(id), {body})
+  }
+
+  /**
+   * Performs a `DELETE` at `/:id`, using an optional request `body`
+   */
+  protected static delete(id: ApiParam, body?: RequestBody) {
+    return super.delete(this.singlePath(id), {body})
+  }
+}
 
 /**
  * Applies colon-delimited path params to a given path pattern

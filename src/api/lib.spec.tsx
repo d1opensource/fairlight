@@ -1,5 +1,5 @@
-import {applyHeaders, getParamsId} from '../lib'
-import {IApiRequestParams} from '../typings'
+import {applyHeaders, getParamsId} from './lib'
+import {IApiRequestParams} from './typings'
 
 describe('getParamsId', () => {
   it('returns null if nothing is passed in', () => {

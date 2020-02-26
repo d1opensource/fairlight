@@ -39,9 +39,7 @@ export type IApiRequestParams<
 
 export type IApiSerializeRequestJson = (body: object) => object
 
-export type IApiParseResponseJson = <TResponseBody extends object>(
-  body: TResponseBody
-) => TResponseBody
+export type IApiParseResponseJson = (body: object) => object
 
 export type ApiRequestFetchPolicy =
   /**

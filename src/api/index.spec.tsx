@@ -1,8 +1,8 @@
 import 'jest-fetch-mock'
 
-import {Api} from '../'
-import {ApiCacheMissError, ApiError} from '../errors'
-import {IApiRequestParams} from '../typings'
+import {Api} from './'
+import {ApiCacheMissError, ApiError} from './errors'
+import {IApiRequestParams} from './typings'
 
 const BASE_URL = 'http://test.com'
 let api: Api
@@ -30,37 +30,89 @@ it('applies the base URL to requests', async () => {
   expect(request.url).toEqual('http://test.com/endpoint')
 })
 
-it('applies default headers', async () => {
-  fetchMock.mockResponseOnce(JSON.stringify({num: 12345}), {
-    headers: {'content-type': 'application/json'}
+describe('request headers', () => {
+  it('applies default headers', async () => {
+    fetchMock.mockResponseOnce(JSON.stringify({num: 12345}), {
+      headers: {'content-type': 'application/json'}
+    })
+    api.setDefaultHeader('X-Authorization', 'x-token')
+    await api.request({method: 'GET', url: '/endpoint'})
+    const request = fetchMock.mock.calls[0][0] as Request
+    expect(request.headers.get('x-authorization')).toEqual('x-token')
   })
-  api.setDefaultHeader('X-Authorization', 'x-token')
-  await api.request({method: 'GET', url: '/endpoint'})
-  const request = fetchMock.mock.calls[0][0] as Request
-  expect(request.headers.get('x-authorization')).toEqual('x-token')
+
+  it('applies custom headers', async () => {
+    fetchMock.mockResponseOnce(JSON.stringify({num: 12345}), {
+      headers: {'content-type': 'application/json'}
+    })
+    api.setDefaultHeader('X-Authorization', 'x-token')
+    await api.request({
+      method: 'GET',
+      url: '/endpoint',
+      headers: {
+        'X-User-Id': '12345'
+      }
+    })
+    const request = fetchMock.mock.calls[0][0] as Request
+    expect(request.headers.get('x-authorization')).toEqual('x-token')
+    expect(request.headers.get('x-user-id')).toEqual('12345')
+  })
 })
 
-it('throws an ApiError and calls onError', async () => {
-  const errorJson = {test: 'error'}
-  fetchMock.mockResponseOnce(JSON.stringify(errorJson), {
-    headers: {'content-type': 'application/json'},
-    status: 400
+describe('request body', () => {
+  it('allows non-JSON request bodies', async () => {
+    fetchMock.mockResponseOnce(JSON.stringify({num: 12345}), {
+      headers: {'content-type': 'application/json'}
+    })
+    await api.request({
+      method: 'POST',
+      url: '/endpoint',
+      body: 'text-body'
+    })
+    const request = fetchMock.mock.calls[0][0] as Request
+    expect(await request.text()).toEqual('text-body')
+  })
+})
+
+describe('errors', () => {
+  it('throws an ApiError and calls onError', async () => {
+    const errorJson = {test: 'error'}
+    fetchMock.mockResponseOnce(JSON.stringify(errorJson), {
+      headers: {'content-type': 'application/json'},
+      status: 400
+    })
+
+    const onError = jest.fn()
+    const unsubscribe = api.onError(onError)
+
+    await expect(
+      api.request({method: 'GET', url: '/endpoint'})
+    ).rejects.toEqual(new ApiError(400, errorJson))
+
+    expect(onError).toBeCalledWith(new ApiError(400, errorJson, 'json'))
+
+    // try unsubscribing from error handler
+    onError.mockClear()
+    unsubscribe()
+    await expect(api.request({method: 'GET', url: '/endpoint'})).rejects
+    expect(onError).not.toBeCalled()
   })
 
-  const onError = jest.fn()
-  const unsubscribe = api.onError(onError)
+  it('parses api error response json', async () => {
+    const errorJson = '{"test_error": "bad-error"}'
+    fetchMock.mockResponseOnce(JSON.stringify(errorJson), {
+      headers: {'content-type': 'application/json'},
+      status: 400
+    })
 
-  await expect(api.request({method: 'GET', url: '/endpoint'})).rejects.toEqual(
-    new ApiError(400, errorJson)
-  )
+    api = new Api({
+      parseResponseJson: (response) => ({parsedError: response['test_error']})
+    })
 
-  expect(onError).toBeCalledWith(new ApiError(400, errorJson, 'json'))
-
-  // try unsubscribing from error handler
-  onError.mockClear()
-  unsubscribe()
-  await expect(api.request({method: 'GET', url: '/endpoint'})).rejects
-  expect(onError).not.toBeCalled()
+    await expect(
+      api.request({method: 'GET', url: '/endpoint'})
+    ).rejects.toEqual(new ApiError(400, {parsedError: 'badError'}, 'json'))
+  })
 })
 
 describe('response parsing', () => {

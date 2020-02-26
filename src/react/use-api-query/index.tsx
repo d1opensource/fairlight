@@ -1,6 +1,4 @@
-import {useEffect, useMemo, useReducer} from 'react'
-
-import {usePrevious} from '@d1g1t/lib/hooks'
+import {useEffect, useMemo, useReducer, useRef} from 'react'
 
 import {READ_CACHE_POLICIES} from '../../api/constants'
 import {getParamsId} from '../../api/lib'
@@ -13,6 +11,12 @@ import {
 import {useApi} from '../use-api'
 import {useApiQueryActions} from './actions'
 import {useApiQueryReducer} from './reducer'
+
+interface IUseApiQueryData<TResponseBody extends ResponseBody> {
+  data: TResponseBody
+  loading: boolean
+  error: Error
+}
 
 export interface IUseApiQueryActions<TResponseBody extends ResponseBody> {
   /**
@@ -72,7 +76,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
      */
     dontReinitialize?: boolean
   } = {}
-): [Loadable<TResponseBody>, IUseApiQueryActions<TResponseBody>] {
+): [IUseApiQueryData<TResponseBody>, IUseApiQueryActions<TResponseBody>] {
   const api = useApi()
   const fetchPolicy = opts.fetchPolicy || api.defaultFetchPolicy
   const paramsId = getParamsId(params)
@@ -187,4 +191,18 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
       }
     }
   ]
+}
+
+/**
+ * Returns previous value, or null if first render pass
+ * @param value updating value
+ */
+function usePrevious<T extends any>(value: T): T {
+  const ref = useRef(null)
+
+  useEffect(() => {
+    ref.current = value
+  }, [value])
+
+  return ref.current
 }

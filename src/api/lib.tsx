@@ -31,7 +31,6 @@ function serializeHeaders(paramHeaders: ApiHeaders): string {
 
   const headerPairs: string[] = []
 
-  // eslint-disable-next-line d1g1t/ban-array-foreach
   headers.forEach((value, key) => {
     headerPairs.push(`${key}:${value};`)
   })

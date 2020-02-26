@@ -1,7 +1,7 @@
-import {getParamsId} from '../../../api/lib';
-import {IApiRequestParams} from '../../../api/typings';
-import {useApiQueryActions} from '../actions';
-import {useApiQueryReducer} from '../reducer';
+import {getParamsId} from '../../api/lib'
+import {IApiRequestParams} from '../../api/typings'
+import {useApiQueryActions} from './actions'
+import {useApiQueryReducer} from './reducer'
 
 it('stores a successful response data if it matches the most recent request', () => {
   let state = useApiQueryReducer(

@@ -50,24 +50,22 @@ export class ApiRequestManager {
     fetchPromise: Promise<ResponseBody>
   }>()
 
-  constructor(
-    params: {
-      /**
-       * Base URL of API to prefix all requests with
-       */
-      baseUrl?: string
-      /**
-       * When provided, all API JSON request bodies will be run
-       * through this transformation function before the API request
-       */
-      serializeRequestJson?: IApiSerializeRequestJson
-      /**
-       * When provided, all API JSON response bodies will be run
-       * through this transformation function before returning the response
-       */
-      parseResponseJson?: IApiParseResponseJson
-    } = {}
-  ) {
+  constructor(params: {
+    /**
+     * Base URL of API to prefix all requests with
+     */
+    baseUrl?: string
+    /**
+     * When provided, all API JSON request bodies will be run
+     * through this transformation function before the API request
+     */
+    serializeRequestJson?: IApiSerializeRequestJson
+    /**
+     * When provided, all API JSON response bodies will be run
+     * through this transformation function before returning the response
+     */
+    parseResponseJson?: IApiParseResponseJson
+  }) {
     this.baseUrl = params.baseUrl || ''
     this.requestFetcher = new ApiRequestFetcher()
     this.serializeRequestJson = params.serializeRequestJson || identity
@@ -151,12 +149,7 @@ export class ApiRequestManager {
    * Returns `true` if a `GET` request matches params
    */
   requestInProgress = (params: IApiRequestParams): boolean => {
-    const paramsKey = getParamsId(params)
-    if (params.method === 'GET') {
-      return this.inProgressRequestCache.has(paramsKey)
-    }
-
-    return false
+    return this.inProgressRequestCache.has(getParamsId(params))
   }
 
   /**
