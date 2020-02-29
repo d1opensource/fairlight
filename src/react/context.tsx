@@ -1,7 +1,19 @@
-import {createContext} from 'react'
+import React, {createContext} from 'react'
 
 import {Api} from '../api'
 
 export const ApiContext = createContext<Api>(new Api())
 
-export const ApiProvider = ApiContext.Provider
+export interface IApiProviderProps {
+  api: Api
+}
+
+export const ApiProvider: React.FC<IApiProviderProps> = function ApiProvider(
+  props
+) {
+  return (
+    <ApiContext.Provider value={props.api}>
+      {props.children}
+    </ApiContext.Provider>
+  )
+}
