@@ -1,6 +1,6 @@
 {
   "name": "restii",
-  "description": "Energize your API",
+  "description": "Energize your REST API with React hooks and a centralized cache.",
   "keywords": [
     "rest",
     "api",
