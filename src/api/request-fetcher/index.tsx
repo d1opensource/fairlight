@@ -1,22 +1,10 @@
 import {ApiError} from '../errors'
-import {ApiRequestMethod, ApiResponseType, ResponseBody} from '../typings'
-
-export interface IRequestFetcherParams {
-  url: string
-  method: ApiRequestMethod
-  body?: BodyInit
-  headers?: Headers
-  responseType?: ApiResponseType
-}
-
-export interface IRequestFetcher {
-  getResponse(
-    params: IRequestFetcherParams
-  ): Promise<{
-    responseBody: ResponseBody | null
-    responseType: ApiResponseType | null
-  }>
-}
+import {
+  ApiResponseType,
+  IRequestFetcher,
+  IRequestFetcherParams,
+  ResponseBody
+} from '../typings'
 
 /**
  * Is called by the `RequestManager` to make the request over the network.

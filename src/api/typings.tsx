@@ -84,3 +84,20 @@ export interface IApiRequestOptions {
    */
   forceNewFetch?: boolean
 }
+
+export interface IRequestFetcherParams {
+  url: string
+  method: ApiRequestMethod
+  body?: BodyInit
+  headers?: Headers
+  responseType?: ApiResponseType
+}
+
+export interface IRequestFetcher {
+  getResponse(
+    params: IRequestFetcherParams
+  ): Promise<{
+    responseBody: ResponseBody | null
+    responseType: ApiResponseType | null
+  }>
+}

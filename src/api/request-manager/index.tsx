@@ -4,13 +4,14 @@ import {DEFAULT_FETCH_POLICY} from '../constants'
 import {ApiError} from '../errors'
 import {GenericCache} from '../generic-cache'
 import {applyHeaders, createSubscription, getParamsId} from '../lib'
-import {ApiRequestFetcher, IRequestFetcher} from '../request-fetcher'
+import {ApiRequestFetcher} from '../request-fetcher'
 import {
   ApiRequestMethod,
   IApiParseResponseJson,
   IApiRequestOptions,
   IApiRequestParams,
   IApiSerializeRequestJson,
+  IRequestFetcher,
   RequestBody,
   ResponseBody
 } from '../typings'
@@ -65,9 +66,10 @@ export class ApiRequestManager {
      * through this transformation function before returning the response
      */
     parseResponseJson?: IApiParseResponseJson
+    requestFetcher?: IRequestFetcher
   }) {
     this.baseUrl = params.baseUrl || ''
-    this.requestFetcher = new ApiRequestFetcher()
+    this.requestFetcher = params.requestFetcher || new ApiRequestFetcher()
     this.serializeRequestJson = params.serializeRequestJson || identity
     this.parseResponseJson = params.parseResponseJson || identity
   }
@@ -119,7 +121,7 @@ export class ApiRequestManager {
     } finally {
       const cachedRequest = this.inProgressRequestCache.get(paramsId)
 
-      if (cachedRequest?.id === id) {
+      if (cachedRequest && cachedRequest.id === id) {
         this.inProgressRequestCache.del(paramsId)
       }
     }
@@ -214,6 +216,7 @@ export class ApiRequestManager {
 
       return responseBody
     } catch (error) {
+      /* istanbul ignore next */
       if (error instanceof ApiError && error.responseType === 'json') {
         error.responseBody = this.parseResponseJson(error.responseBody)
       }
