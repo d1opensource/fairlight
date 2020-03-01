@@ -10,10 +10,11 @@
     "cache",
     "fetch"
   ],
-  "version": "0.1.0",
+  "version": "0.2.0",
   "main": "./dist/index.cjs.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "sideEffects": false,
   "private": true,
   "author": "Thomas Dashney <thomas.dashney@d1g1t.com>",
   "license": "MIT",
