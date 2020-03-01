@@ -125,8 +125,8 @@ describe('RestEndpoints', () => {
       return super._partialUpdate(id, body)
     }
 
-    static delete(id: ApiParam) {
-      return super._delete(id)
+    static destroy(id: ApiParam) {
+      return super._destroy(id)
     }
   }
 
@@ -174,7 +174,7 @@ describe('RestEndpoints', () => {
   })
 
   test('delete', () => {
-    expect(Endpoints.delete(6)).toEqual({
+    expect(Endpoints.destroy(6)).toEqual({
       method: 'DELETE',
       url: '/base/6'
     })

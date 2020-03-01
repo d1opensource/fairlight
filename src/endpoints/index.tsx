@@ -233,7 +233,7 @@ export class RestEndpoints extends HttpEndpoints {
   /**
    * Performs a `DELETE` at `/:id`, using an optional request `body`
    */
-  protected static _delete(id: ApiParam, body?: RequestBody) {
+  protected static _destroy(id: ApiParam, body?: RequestBody) {
     return super._delete(this._singlePath(id), {body})
   }
 }
