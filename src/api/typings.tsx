@@ -14,6 +14,7 @@ interface ApiCommonRequestParams<TMethod extends ApiRequestMethod> {
   method: TMethod
   headers?: ApiHeaders
   responseType?: ApiResponseType
+  extraKey?: string
 }
 
 export interface ApiGetDeleteRequestParams<

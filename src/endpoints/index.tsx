@@ -14,6 +14,7 @@ export interface EndpointCreateRequestInit {
   query?: ApiQueryParams
   headers?: ApiHeaders
   body?: RequestBody
+  extraKey?: string
 }
 
 export type ApiParam = string | number
@@ -164,7 +165,8 @@ export class HttpEndpoints {
       method,
       url,
       headers: requestInit.headers,
-      body: requestInit.body
+      body: requestInit.body,
+      extraKey: requestInit.extraKey
     } as IApiRequestParams<TMethod, TResponseBody>
   }
 }

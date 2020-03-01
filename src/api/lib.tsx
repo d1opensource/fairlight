@@ -14,7 +14,8 @@ export function getParamsId(
     params.method,
     params.url,
     params.responseType || '',
-    serializeHeaders(params.headers)
+    serializeHeaders(params.headers),
+    params.extraKey
   ])
 }
 

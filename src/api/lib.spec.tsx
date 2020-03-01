@@ -129,6 +129,43 @@ describe('getParamsId', () => {
       })
     )
   })
+
+  it('serializes an extra key', () => {
+    const requestParams: IApiRequestParams = {
+      method: 'GET',
+      url: '/endpoint'
+    }
+
+    for (const extraKey of [null, undefined]) {
+      expect(getParamsId(requestParams)).toEqual(
+        getParamsId({
+          ...requestParams,
+          extraKey
+        })
+      )
+    }
+
+    expect(
+      getParamsId({
+        ...requestParams,
+        extraKey: 'test'
+      })
+    ).toEqual(
+      getParamsId({
+        ...requestParams,
+        extraKey: 'test'
+      })
+    )
+
+    for (const extraKey of ['', 'one']) {
+      expect(getParamsId(requestParams)).not.toEqual(
+        getParamsId({
+          ...requestParams,
+          extraKey
+        })
+      )
+    }
+  })
 })
 
 test('applyHeaders', () => {
