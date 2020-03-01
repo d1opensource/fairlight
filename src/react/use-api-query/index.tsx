@@ -62,15 +62,6 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
     forceNewFetch?: boolean
 
     /**
-     * Similar to the dependencies array that is passed to `useEffect`, `useMemo`, and `useCallback`.
-     *
-     * This is specifically helpful for example when you want to retrigger a `POST` request
-     * when parameters in the request body change, since `body` changes do not trigger
-     * a new fetch.
-     */
-    refetchOn?: any[]
-
-    /**
      * If true, will keep `data` from previous requests
      * until new data is received.
      */
@@ -151,7 +142,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
     return () => {
       unsubscribe()
     }
-  }, [paramsId, ...(opts.refetchOn || [])])
+  }, [paramsId])
 
   // return loading flag if `useEffect` hasn't kicked in yet
   // but the a new request is about to kick off
