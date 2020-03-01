@@ -96,7 +96,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
   useEffect(() => {
     if (!params) {
       dispatch(useApiQueryActions.reset())
-      return
+      return undefined
     }
 
     const unsubscribe = api.onCacheUpdate(params, (responseBody) => {
@@ -111,7 +111,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
       // don't bother kicking off a request
       // since we already have the cached data
       useApiQueryActions.setData(cachedData)
-      return
+      return undefined
     }
 
     const id = Symbol()
