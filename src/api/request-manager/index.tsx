@@ -47,7 +47,7 @@ export class ApiRequestManager {
 
   private inProgressRequestCache = new GenericCache<{
     id: symbol
-    fetchPromise: Promise<ResponseBody>
+    fetchPromise: Promise<ResponseBody | null>
   }>()
 
   constructor(params: {
@@ -83,7 +83,7 @@ export class ApiRequestManager {
   getResponseBody = <TResponseBody extends ResponseBody>(
     params: IApiRequestParams<ApiRequestMethod, TResponseBody>,
     options: IApiRequestOptions
-  ): Promise<TResponseBody> => {
+  ): Promise<TResponseBody | null> => {
     if (params.method !== 'GET') {
       // only cache in-progress requests for GET requests
       return this.fetchResponseBody(params, options) as Promise<TResponseBody>
@@ -111,7 +111,7 @@ export class ApiRequestManager {
     params: IApiRequestParams,
     options: IApiRequestOptions,
     id: symbol
-  ): Promise<ResponseBody> {
+  ): Promise<ResponseBody | null> {
     const paramsId = getParamsId(params)
 
     try {
@@ -166,7 +166,7 @@ export class ApiRequestManager {
   private fetchResponseBody = async (
     params: IApiRequestParams,
     options: IApiRequestOptions
-  ): Promise<ResponseBody> => {
+  ): Promise<ResponseBody | null> => {
     const {fetchPolicy = DEFAULT_FETCH_POLICY} = options
     try {
       let headers = new Headers(this.defaultHeaders)
@@ -175,7 +175,7 @@ export class ApiRequestManager {
         headers = applyHeaders(headers, params.headers)
       }
 
-      let body: BodyInit
+      let body: BodyInit | undefined
 
       if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(params.method)) {
         const paramBody = (params as {body: RequestBody}).body

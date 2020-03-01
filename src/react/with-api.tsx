@@ -22,6 +22,6 @@ export function withApi<TBaseComponentProps>(
   return WithApi
 }
 
-function getDisplayName(Component: React.ComponentType): string {
+function getDisplayName(Component: React.ComponentType<any>): string {
   return Component.displayName || Component.name || 'Component'
 }

@@ -127,16 +127,15 @@ export class HttpEndpoints {
    * To customize query parameter serialization, override this in your base class.
    */
   protected static _serializeQuery(query: ApiQueryParams): string {
-    const queryWithoutEmptyValues = Object.entries(query).reduce(
-      (prev, [key, value]) => {
-        if (value !== undefined) {
-          prev[key] = value
-        }
+    const queryWithoutEmptyValues = Object.entries(query).reduce<
+      Record<string, string | number | boolean>
+    >((prev, [key, value]) => {
+      if (value !== undefined) {
+        prev[key] = value
+      }
 
-        return prev
-      },
-      {}
-    )
+      return prev
+    }, {})
 
     const params = new URLSearchParams(
       queryWithoutEmptyValues as Record<string, string>

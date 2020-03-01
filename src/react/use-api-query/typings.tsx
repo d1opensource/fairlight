@@ -1,7 +1,9 @@
+import {ResponseBody} from '../../api/typings'
+
 export interface IUseApiQueryState {
-  id: symbol
-  paramsId: string
+  id: symbol | null
+  paramsId: string | null
   loading: boolean
-  data: any
-  error: Error
+  data: ResponseBody | undefined | null
+  error: Error | null
 }

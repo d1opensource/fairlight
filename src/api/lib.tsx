@@ -10,10 +10,6 @@ import {ApiHeaders, ApiRequestMethod, IApiRequestParams} from './typings'
 export function getParamsId(
   params: IApiRequestParams<ApiRequestMethod>
 ): string {
-  if (!params) {
-    return null
-  }
-
   return JSON.stringify([
     params.method,
     params.url,
@@ -22,7 +18,7 @@ export function getParamsId(
   ])
 }
 
-function serializeHeaders(paramHeaders: ApiHeaders): string {
+function serializeHeaders(paramHeaders?: ApiHeaders): string {
   if (!paramHeaders) {
     return ''
   }
@@ -46,10 +42,6 @@ function serializeHeaders(paramHeaders: ApiHeaders): string {
  */
 export function applyHeaders(prevHeaders: Headers, apiHeaders: ApiHeaders) {
   const headers = new Headers(prevHeaders)
-
-  if (!apiHeaders) {
-    return headers
-  }
 
   for (const key of Object.keys(apiHeaders)) {
     headers.set(key, apiHeaders[key])

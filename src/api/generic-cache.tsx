@@ -5,8 +5,8 @@ export class GenericCache<TValue = any> {
     return this.valuesByCacheKey.has(key)
   }
 
-  get(key: string): TValue | undefined {
-    return this.valuesByCacheKey.get(key) || undefined
+  get(key: string): TValue | null {
+    return this.valuesByCacheKey.get(key) || null
   }
 
   set(key: string, value: TValue): void {

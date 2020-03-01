@@ -8,14 +8,18 @@ export class ApiCacheMissError extends Error {}
 /**
  * Thrown if a non-200 status response is received
  */
-export class ApiError<T extends ResponseBody> extends Error {
+export class ApiError<T extends ResponseBody | null> extends Error {
   public status: number
 
   public responseBody: T
 
-  public responseType: ApiResponseType
+  public responseType?: ApiResponseType | null
 
-  constructor(status: number, responseBody: T, responseType?: ApiResponseType) {
+  constructor(
+    status: number,
+    responseBody: T,
+    responseType?: ApiResponseType | null
+  ) {
     super(`API Error: ${status}`)
     this.responseBody = responseBody
     this.status = status

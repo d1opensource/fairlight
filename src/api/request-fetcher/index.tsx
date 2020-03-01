@@ -12,7 +12,10 @@ export interface IRequestFetcherParams {
 export interface IRequestFetcher {
   getResponse(
     params: IRequestFetcherParams
-  ): Promise<{responseBody: ResponseBody; responseType: ApiResponseType}>
+  ): Promise<{
+    responseBody: ResponseBody | null
+    responseType: ApiResponseType | null
+  }>
 }
 
 /**
@@ -25,7 +28,10 @@ export interface IRequestFetcher {
 export class ApiRequestFetcher implements IRequestFetcher {
   getResponse = async (
     params: IRequestFetcherParams
-  ): Promise<{responseBody: ResponseBody; responseType: ApiResponseType}> => {
+  ): Promise<{
+    responseBody: ResponseBody | null
+    responseType: ApiResponseType | null
+  }> => {
     const request = this.createRequest(params)
     const response = await fetch(request)
     const {responseBody, responseType} = await this.parseResponseBody(
@@ -57,7 +63,10 @@ export class ApiRequestFetcher implements IRequestFetcher {
   private async parseResponseBody(
     response: Response,
     params: IRequestFetcherParams
-  ): Promise<{responseBody: ResponseBody; responseType: ApiResponseType}> {
+  ): Promise<{
+    responseBody: ResponseBody | null
+    responseType: ApiResponseType | null
+  }> {
     const responseType =
       params.responseType ||
       this.inferResponseTypeUsingContentType(
@@ -89,8 +98,8 @@ export class ApiRequestFetcher implements IRequestFetcher {
    * 'Content-Type' header
    */
   private inferResponseTypeUsingContentType(
-    contentType: string
-  ): ApiResponseType {
+    contentType: string | null
+  ): ApiResponseType | null {
     if (!contentType) {
       return null
     }

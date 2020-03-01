@@ -13,9 +13,9 @@ import {useApiQueryActions} from './actions'
 import {useApiQueryReducer} from './reducer'
 
 interface IUseApiQueryData<TResponseBody extends ResponseBody> {
-  data: TResponseBody
+  data: TResponseBody | undefined | null
   loading: boolean
-  error: Error
+  error: Error | null
 }
 
 export interface IUseApiQueryActions<TResponseBody extends ResponseBody> {
@@ -79,7 +79,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
 ): [IUseApiQueryData<TResponseBody>, IUseApiQueryActions<TResponseBody>] {
   const api = useApi()
   const fetchPolicy = opts.fetchPolicy || api.defaultFetchPolicy
-  const paramsId = getParamsId(params)
+  const paramsId = params && getParamsId(params)
   const [state, dispatch] = useReducer(useApiQueryReducer, null, () => ({
     id: null,
     paramsId: null,
@@ -119,7 +119,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
     dispatch(
       useApiQueryActions.request({
         id,
-        paramsId,
+        paramsId: paramsId as string,
         dontReinitialize: opts.dontReinitialize,
         initData: cachedData || null
       })
@@ -130,9 +130,21 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
           fetchPolicy,
           forceNewFetch: opts.forceNewFetch
         })
-        dispatch(useApiQueryActions.success({id, paramsId, data}))
+        dispatch(
+          useApiQueryActions.success({
+            id,
+            paramsId: paramsId as string,
+            data
+          })
+        )
       } catch (error) {
-        dispatch(useApiQueryActions.failure({id, paramsId, error}))
+        dispatch(
+          useApiQueryActions.failure({
+            id,
+            paramsId: paramsId as string,
+            error
+          })
+        )
       }
     })()
 
@@ -149,7 +161,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
   const returnedState = useMemo(
     () => ({
       loading: aboutToStartNewRequest || state.loading,
-      data: state.data,
+      data: state.data as TResponseBody | null | undefined,
       error: state.error
     }),
     [aboutToStartNewRequest, state.data, state.loading, state.error]
@@ -159,7 +171,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
     returnedState,
     {
       setData: (data) => {
-        if (fetchPolicy === 'no-cache') {
+        if (fetchPolicy === 'no-cache' || !params) {
           dispatch(useApiQueryActions.setData(data))
         } else {
           // write to the cache, which will in turn
@@ -169,6 +181,10 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
       },
 
       refetch: async (refetchOpts = {}) => {
+        if (!paramsId || !params) {
+          return
+        }
+
         const id = Symbol()
 
         dispatch(
@@ -197,8 +213,8 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
  * Returns previous value, or null if first render pass
  * @param value updating value
  */
-function usePrevious<T extends any>(value: T): T {
-  const ref = useRef(null)
+function usePrevious<T extends any>(value: T | null): T | null {
+  const ref = useRef<T | null>(null)
 
   useEffect(() => {
     ref.current = value

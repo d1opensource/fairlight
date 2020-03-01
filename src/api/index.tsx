@@ -60,7 +60,10 @@ export class Api {
     const {fetchPolicy = DEFAULT_FETCH_POLICY} = options
 
     if (params.method !== 'GET' || !READ_CACHE_POLICIES.includes(fetchPolicy)) {
-      return this.requestManager.getResponseBody<TResponseBody>(params, options)
+      return this.requestManager.getResponseBody<TResponseBody>(
+        params,
+        options
+      ) as Promise<TResponseBody>
     }
 
     const cachedResponse = this.responseBodyCache.get(getParamsId(params))
@@ -81,7 +84,10 @@ export class Api {
       return Promise.reject(new ApiCacheMissError(`Cache miss: ${params.url}`))
     }
 
-    return this.requestManager.getResponseBody<TResponseBody>(params, options)
+    return this.requestManager.getResponseBody<TResponseBody>(
+      params,
+      options
+    ) as Promise<TResponseBody>
   }
 
   /**

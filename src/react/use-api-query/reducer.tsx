@@ -3,19 +3,21 @@ import {ActionType, getType, Reducer} from 'typesafe-actions'
 import {useApiQueryActions} from './actions'
 import {IUseApiQueryState} from './typings'
 
+const INITIAL_STATE = {
+  id: null,
+  paramsId: null,
+  loading: false,
+  data: null,
+  error: null
+}
+
 export const useApiQueryReducer: Reducer<
   IUseApiQueryState,
   ActionType<typeof useApiQueryActions>
-> = (prev, action) => {
+> = (prev = INITIAL_STATE, action) => {
   switch (action.type) {
     case getType(useApiQueryActions.reset):
-      return {
-        id: null,
-        paramsId: null,
-        loading: false,
-        data: null,
-        error: null
-      }
+      return INITIAL_STATE
     case getType(useApiQueryActions.request):
       return {
         ...prev,
