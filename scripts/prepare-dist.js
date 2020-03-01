@@ -24,9 +24,9 @@ delete packageJson.scripts
 // on-going package development (e.g. running tests, supporting npm link, etc.).
 // when publishing from "dist" however, we need to update the package.json
 // to point to the files within the same directory.
-packageJson.main = 'index.cjs.js'
-packageJson.module = 'index.esm.js'
-packageJson.types = 'index.d.ts'
+for (const key of ['main', 'module', 'types']) {
+  packageJson[key] = packageJson[key].replace('./dist/', '')
+}
 
 const distPackageJson = JSON.stringify(packageJson, null, 2) + '\n'
 fs.writeFileSync(`${distRoot}/package.json`, distPackageJson)
