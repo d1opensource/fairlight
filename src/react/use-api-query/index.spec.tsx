@@ -456,6 +456,18 @@ describe('refetch', () => {
       error: null
     })
   })
+
+  it('does not make a request if there are no params defined', async () => {
+    const {result} = renderHook(() => useApiQuery(null), {
+      wrapper
+    })
+
+    act(() => {
+      result.current[1].refetch()
+    })
+
+    expect(api.request as jest.Mock).not.toBeCalled()
+  })
 })
 
 describe('setData', () => {
