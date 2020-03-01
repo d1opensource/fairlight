@@ -10,23 +10,23 @@ describe('HttpEndpoints', () => {
     static basePath = '/base'
 
     static GET(init: Omit<IEndpointCreateRequestInit, 'body'>) {
-      return super.get('/endpoint', init)
+      return super._get('/endpoint', init)
     }
 
     static POST(init: IEndpointCreateRequestInit = {}) {
-      return super.post('/endpoint', init)
+      return super._post('/endpoint', init)
     }
 
     static PUT(init: IEndpointCreateRequestInit = {}) {
-      return super.put('/endpoint', init)
+      return super._put('/endpoint', init)
     }
 
     static PATCH(init: IEndpointCreateRequestInit = {}) {
-      return super.patch('/endpoint', init)
+      return super._patch('/endpoint', init)
     }
 
     static DELETE(init: IEndpointCreateRequestInit = {}) {
-      return super.delete('/endpoint', init)
+      return super._delete('/endpoint', init)
     }
   }
 
@@ -106,27 +106,27 @@ describe('RestEndpoints', () => {
     static basePath = '/base'
 
     static list(query?: {limit?: number}) {
-      return super.list(query)
+      return super._list(query)
     }
 
     static create(body: IModel) {
-      return super.create(body)
+      return super._create(body)
     }
 
     static findById(id: ApiParam) {
-      return super.findById(id)
+      return super._findById(id)
     }
 
     static update(id: ApiParam, body: Partial<IModel>) {
-      return super.update(id, body)
+      return super._update(id, body)
     }
 
     static partialUpdate(id: ApiParam, body: Partial<IModel>) {
-      return super.partialUpdate(id, body)
+      return super._partialUpdate(id, body)
     }
 
     static delete(id: ApiParam) {
-      return super.delete(id)
+      return super._delete(id)
     }
   }
 

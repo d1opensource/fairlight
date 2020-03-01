@@ -23,9 +23,7 @@ beforeEach(() => {
   } as any
 })
 
-const wrapper = ({children}) => (
-  <ApiProvider value={api}>{children}</ApiProvider>
-)
+const wrapper = ({children}) => <ApiProvider api={api}>{children}</ApiProvider>
 
 it('does not make a query if there are no params', () => {
   const {result} = renderHook(() => useApiQuery(null), {wrapper})
