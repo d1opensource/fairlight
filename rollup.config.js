@@ -13,7 +13,7 @@ module.exports = [
     input: './dist/index.js',
     output: [
       {
-        dir: './dist',
+        file: './dist/index.esm.js',
         format: 'esm',
         sourcemap: true
       },
@@ -28,7 +28,7 @@ module.exports = [
     plugins: [resolve()]
   },
   {
-    input: './dist/index.js',
+    input: './dist/index.cjs.js',
     output: {
       file: './dist/index.cjs.min.js',
       format: 'cjs',
