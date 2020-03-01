@@ -22,10 +22,10 @@ it('does not cache the response if not the most recent request for the params', 
 
   const params: IApiRequestParams = {method: 'GET', url: '/endpoint'}
   const getResponseBody1 = requestManager.getResponseBody(params, {
-    forceNewFetch: true
+    deduplicate: false
   })
   const getResponseBody2 = requestManager.getResponseBody(params, {
-    forceNewFetch: true
+    deduplicate: false
   })
 
   // resolve first request before second request finishes

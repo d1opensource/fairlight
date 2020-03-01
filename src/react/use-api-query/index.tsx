@@ -45,9 +45,10 @@ export interface UseApiQueryActions<TResponseBody extends ResponseBody> {
      * Passed as an option to `api.request` and guarantees that a
      * new request will be made.
      *
-     * By default, it will use `forceNewFetch` from the hook's options (`false` by default).
+     * By default, it will use `deduplicate` from the hook's options
+     * (`true` for `GET` requests, `false` for non-`GET` requests).
      */
-    forceNewFetch?: boolean
+    deduplicate?: boolean
   }) => void
 }
 
@@ -59,7 +60,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
   params: IApiRequestParams<ApiRequestMethod, TResponseBody> | null,
   opts: {
     fetchPolicy?: ApiRequestFetchPolicy
-    forceNewFetch?: boolean
+    deduplicate?: boolean
 
     /**
      * If true, will keep `data` from previous requests
@@ -119,7 +120,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
       try {
         const data = await api.request(params, {
           fetchPolicy,
-          forceNewFetch: opts.forceNewFetch
+          deduplicate: opts.deduplicate
         })
         dispatch(
           useApiQueryActions.success({
@@ -189,7 +190,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
           const data = await api.request(params, {
             fetchPolicy:
               fetchPolicy === 'no-cache' ? 'no-cache' : 'fetch-first',
-            forceNewFetch: opts.forceNewFetch || refetchOpts.forceNewFetch
+            deduplicate: refetchOpts.deduplicate ?? opts.deduplicate
           })
           dispatch(useApiQueryActions.success({id, paramsId, data}))
         } catch (error) {

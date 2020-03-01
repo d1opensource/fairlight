@@ -48,7 +48,7 @@ export class ApiRequestManager {
 
   private inProgressRequestCache = new GenericCache<{
     id: symbol
-    fetchPromise: Promise<ResponseBody | null>
+    requestPromise: Promise<ResponseBody | null>
   }>()
 
   constructor(params: {
@@ -77,7 +77,7 @@ export class ApiRequestManager {
   /**
    * Returns a promise that resolves with the response body.
    *
-   * If there is an in-progress request, and `options.forceNewFetch` is `false`,
+   * If there is an in-progress request, and `options.deduplicate` is `true`,
    * it will return the same promise.
    *
    * On a successful fetch, it will cache the response unless `fetchPolicy` is `'no-cache'`
@@ -86,30 +86,29 @@ export class ApiRequestManager {
     params: IApiRequestParams<ApiRequestMethod, TResponseBody>,
     options: ApiRequestOptions
   ): Promise<TResponseBody | null> => {
-    if (params.method !== 'GET') {
-      // only cache in-progress requests for GET requests
-      return this.fetchResponseBody(params, options) as Promise<TResponseBody>
-    }
-
     const paramsKey = getParamsId(params)
 
     // return cached promise if it exists
     const cachedRequest = this.inProgressRequestCache.get(paramsKey)
-    if (cachedRequest && !options.forceNewFetch) {
+    const deduplicate = options.deduplicate ?? defaultDeduplicate(params)
+    if (cachedRequest && deduplicate) {
       // if user hasn't explicitly requested a new fetch,
       // return the in-progress fetch promise
-      return cachedRequest.fetchPromise as Promise<TResponseBody>
+      return cachedRequest.requestPromise as Promise<TResponseBody>
     }
 
     const id = Symbol()
-    const fetchPromise = this.createGetPromise(params, options, id)
+    const fetchPromise = this.createRequestPromise(params, options, id)
 
-    this.inProgressRequestCache.set(paramsKey, {id, fetchPromise})
+    this.inProgressRequestCache.set(paramsKey, {
+      id,
+      requestPromise: fetchPromise
+    })
 
     return fetchPromise as Promise<TResponseBody>
   }
 
-  private async createGetPromise(
+  private async createRequestPromise(
     params: IApiRequestParams,
     options: ApiRequestOptions,
     id: symbol
@@ -225,4 +224,8 @@ export class ApiRequestManager {
       throw error
     }
   }
+}
+
+function defaultDeduplicate(params: IApiRequestParams) {
+  return params.method === 'GET' ? true : false
 }

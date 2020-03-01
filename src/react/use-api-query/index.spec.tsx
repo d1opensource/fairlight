@@ -352,7 +352,7 @@ describe('refetch', () => {
       ;(api.request as jest.Mock).mockResolvedValue(response1)
 
       const {result, waitForNextUpdate} = renderHook(
-        () => useApiQuery(params, {fetchPolicy}),
+        () => useApiQuery(params, {fetchPolicy, deduplicate: false}),
         {wrapper}
       )
 
@@ -377,7 +377,7 @@ describe('refetch', () => {
         fetchPolicy: ['no-cache', null].includes(fetchPolicy)
           ? 'no-cache'
           : 'fetch-first',
-        forceNewFetch: undefined
+        deduplicate: false
       })
 
       expect(result.current[0]).toEqual({
@@ -395,6 +395,34 @@ describe('refetch', () => {
         error: null
       })
     }
+  })
+
+  it('can override deduplicate', async () => {
+    const params: IApiRequestParams = {method: 'GET', url: '/endpoint'}
+
+    const response1 = {name: 'Test'}
+    ;(api.request as jest.Mock).mockResolvedValue(response1)
+
+    const {result, waitForNextUpdate} = renderHook(
+      () => useApiQuery(params, {deduplicate: false}),
+      {wrapper}
+    )
+
+    // eslint-disable-next-line
+    await waitForNextUpdate()
+    ;(api.request as jest.Mock).mockClear()
+
+    act(() => {
+      result.current[1].refetch({deduplicate: true})
+    })
+
+    expect(api.request).toBeCalledWith(params, {
+      deduplicate: true,
+      fetchPolicy: 'no-cache'
+    })
+
+    // eslint-disable-next-line
+    await waitForNextUpdate()
   })
 
   it('stores a refetch error', async () => {

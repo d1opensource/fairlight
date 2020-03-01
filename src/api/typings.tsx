@@ -77,13 +77,13 @@ export interface ApiRequestOptions {
   fetchPolicy?: ApiRequestFetchPolicy
 
   /**
-   * Normally, identical concurrent `GET` requests will
-   * not retrigger a refetch, and will return the same promise.
+   * When `true`, will ensure that it reuses any duplicate
+   * requests that are currently occurring to cut down on requests.
    *
-   * When `forceNewFetch` is set to `true`, it will trigger
-   * a new request even if one is already occurring.
+   * This is `true` by default for `GET` requests, and `false` for
+   * non-`GET` requests, but you can override here on a per-request basis.
    */
-  forceNewFetch?: boolean
+  deduplicate?: boolean
 }
 
 export interface RequestFetcherParams {
