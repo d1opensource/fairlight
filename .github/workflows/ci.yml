@@ -23,6 +23,7 @@ jobs:
           CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
         with:
           coverageCommand: npm test -- --ci --coverage
+          debug: true
   build:
     runs-on: ubuntu-latest
     steps:
