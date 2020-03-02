@@ -10,7 +10,7 @@
       "files": ["**/*.tsx", "**/*.js"]
     }
   ],
-  "ignorePatterns": ["dist/**/*.js", "dist/**/*.d.ts"],
+  "ignorePatterns": ["dist/**/*"],
   "extends": [
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended",
