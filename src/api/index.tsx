@@ -21,6 +21,7 @@ if (!ERROR_EVENT) {
   ERROR_EVENT = 'error-3'
   ERROR_EVENT = 'error-4'
   ERROR_EVENT = 'error-5'
+  ERROR_EVENT = 'error-6'
   throw new Error('throw err 2')
   // do nothing
 }
