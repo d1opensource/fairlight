@@ -1,11 +1,7 @@
-import {applyHeaders, getParamsId} from '../lib'
-import {IApiRequestParams} from '../typings'
+import {applyHeaders, getParamsId} from './lib'
+import {IApiRequestParams} from './typings'
 
 describe('getParamsId', () => {
-  it('returns null if nothing is passed in', () => {
-    expect(getParamsId(null)).toEqual(null)
-  })
-
   it('serializes basic requests', () => {
     const requestParams: IApiRequestParams = {
       method: 'GET',
@@ -137,10 +133,10 @@ describe('getParamsId', () => {
 
 test('applyHeaders', () => {
   const prevHeaders = new Headers({'Content-Type': 'application/json'})
-  expect(applyHeaders(prevHeaders, null)).not.toBe(prevHeaders) // ensure it doesn't mutate original headers
+  expect(applyHeaders(prevHeaders, {})).not.toBe(prevHeaders) // ensure it doesn't mutate original headers
 
   // no change
-  expect(applyHeaders(prevHeaders, null)).toEqual(prevHeaders)
+  expect(applyHeaders(prevHeaders, {})).toEqual(prevHeaders)
 
   // new header
   expect(applyHeaders(prevHeaders, {'x-authorization': 'x-token'})).toEqual(

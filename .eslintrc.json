@@ -1,0 +1,55 @@
+{
+  "root": true,
+  "env": {
+    "browser": true,
+    "es6": true,
+    "jest": true
+  },
+  "overrides": [
+    {
+      "files": ["**/*.tsx", "**/*.js"]
+    }
+  ],
+  "ignorePatterns": ["dist/**/*"],
+  "extends": [
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended",
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "plugin:prettier/recommended",
+    "prettier/react",
+    "prettier/@typescript-eslint"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    },
+    "ecmaVersion": 2018,
+    "sourceType": "module"
+  },
+
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  },
+
+  "plugins": ["@typescript-eslint", "react", "prettier", "react-hooks"],
+  "rules": {
+    "prettier/prettier": 1,
+    "@typescript-eslint/explicit-function-return-type": 0,
+    "@typescript-eslint/interface-name-prefix": [1, {"prefixWithI": "never"}],
+    "@typescript-eslint/no-empty-interface": 0,
+    "@typescript-eslint/no-explicit-any": 0,
+    "@typescript-eslint/no-unused-vars": 0,
+    "@typescript-eslint/no-use-before-define": 0,
+    "react/prop-types": 0,
+    "no-unused-vars": 0,
+    "no-undef": 0,
+    "no-console": [
+      "error",
+      {"allow": ["table", "warn", "error", "info", "group", "groupEnd"]}
+    ]
+  }
+}

@@ -7,8 +7,8 @@ import {createSubscription, genCacheUpdateEvent, getParamsId} from './lib'
 import {ApiRequestManager} from './request-manager'
 import {
   ApiRequestMethod,
+  ApiRequestOptions,
   IApiParseResponseJson,
-  IApiRequestOptions,
   IApiRequestParams,
   IApiSerializeRequestJson,
   ResponseBody
@@ -55,12 +55,15 @@ export class Api {
    */
   request = <TResponseBody extends ResponseBody>(
     params: IApiRequestParams<ApiRequestMethod, TResponseBody>,
-    options: IApiRequestOptions = {}
+    options: ApiRequestOptions = {}
   ): Promise<TResponseBody> => {
     const {fetchPolicy = DEFAULT_FETCH_POLICY} = options
 
     if (params.method !== 'GET' || !READ_CACHE_POLICIES.includes(fetchPolicy)) {
-      return this.requestManager.getResponseBody<TResponseBody>(params, options)
+      return this.requestManager.getResponseBody<TResponseBody>(
+        params,
+        options
+      ) as Promise<TResponseBody>
     }
 
     const cachedResponse = this.responseBodyCache.get(getParamsId(params))
@@ -81,7 +84,10 @@ export class Api {
       return Promise.reject(new ApiCacheMissError(`Cache miss: ${params.url}`))
     }
 
-    return this.requestManager.getResponseBody<TResponseBody>(params, options)
+    return this.requestManager.getResponseBody<TResponseBody>(
+      params,
+      options
+    ) as Promise<TResponseBody>
   }
 
   /**

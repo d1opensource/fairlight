@@ -10,7 +10,7 @@ import {
 
 export type ApiQueryParams = Record<string, string | number | boolean>
 
-export interface IEndpointCreateRequestInit {
+export interface EndpointCreateRequestInit {
   query?: ApiQueryParams
   headers?: ApiHeaders
   body?: RequestBody
@@ -53,11 +53,11 @@ export class HttpEndpoints {
    * @param path A path relative to the base path.
    * @param requestInit Additional request parameters.
    */
-  protected static get<TResponseBody extends ResponseBody = ResponseBody>(
+  protected static _get<TResponseBody extends ResponseBody = ResponseBody>(
     path: string,
-    requestInit?: Omit<IEndpointCreateRequestInit, 'body'>
+    requestInit?: Omit<EndpointCreateRequestInit, 'body'>
   ) {
-    return this.createRequest<'GET', TResponseBody>('GET', path, requestInit)
+    return this._createRequest<'GET', TResponseBody>('GET', path, requestInit)
   }
 
   /**
@@ -66,11 +66,11 @@ export class HttpEndpoints {
    * @param path A path relative to the base path.
    * @param requestInit Additional request parameters.
    */
-  protected static post<TResponseBody extends ResponseBody = ResponseBody>(
+  protected static _post<TResponseBody extends ResponseBody = ResponseBody>(
     path: string,
-    requestInit?: IEndpointCreateRequestInit
+    requestInit?: EndpointCreateRequestInit
   ) {
-    return this.createRequest<'POST', TResponseBody>('POST', path, requestInit)
+    return this._createRequest<'POST', TResponseBody>('POST', path, requestInit)
   }
 
   /**
@@ -79,11 +79,11 @@ export class HttpEndpoints {
    * @param path A path relative to the base path.
    * @param requestInit Additional request parameters.
    */
-  protected static put<TResponseBody extends ResponseBody = ResponseBody>(
+  protected static _put<TResponseBody extends ResponseBody = ResponseBody>(
     path: string,
-    requestInit?: IEndpointCreateRequestInit
+    requestInit?: EndpointCreateRequestInit
   ) {
-    return this.createRequest<'PUT', TResponseBody>('PUT', path, requestInit)
+    return this._createRequest<'PUT', TResponseBody>('PUT', path, requestInit)
   }
 
   /**
@@ -92,11 +92,11 @@ export class HttpEndpoints {
    * @param path A path relative to the base path.
    * @param requestInit Additional request parameters.
    */
-  protected static patch<TResponseBody extends ResponseBody = ResponseBody>(
+  protected static _patch<TResponseBody extends ResponseBody = ResponseBody>(
     path: string,
-    requestInit?: IEndpointCreateRequestInit
+    requestInit?: EndpointCreateRequestInit
   ) {
-    return this.createRequest<'PATCH', TResponseBody>(
+    return this._createRequest<'PATCH', TResponseBody>(
       'PATCH',
       path,
       requestInit
@@ -109,11 +109,11 @@ export class HttpEndpoints {
    * @param path A path relative to the base path.
    * @param requestInit Additional request parameters.
    */
-  protected static delete<TResponseBody extends ResponseBody = ResponseBody>(
+  protected static _delete<TResponseBody extends ResponseBody = ResponseBody>(
     path: string,
-    requestInit?: IEndpointCreateRequestInit
+    requestInit?: EndpointCreateRequestInit
   ) {
-    return this.createRequest<'DELETE', TResponseBody>(
+    return this._createRequest<'DELETE', TResponseBody>(
       'DELETE',
       path,
       requestInit
@@ -126,17 +126,16 @@ export class HttpEndpoints {
    *
    * To customize query parameter serialization, override this in your base class.
    */
-  protected static serializeQuery(query: ApiQueryParams = {}): string {
-    const queryWithoutEmptyValues = Object.entries(query).reduce(
-      (prev, [key, value]) => {
-        if (value !== undefined) {
-          prev[key] = value
-        }
+  protected static _serializeQuery(query: ApiQueryParams): string {
+    const queryWithoutEmptyValues = Object.entries(query).reduce<
+      Record<string, string | number | boolean>
+    >((prev, [key, value]) => {
+      if (value !== undefined) {
+        prev[key] = value
+      }
 
-        return prev
-      },
-      {}
-    )
+      return prev
+    }, {})
 
     const params = new URLSearchParams(
       queryWithoutEmptyValues as Record<string, string>
@@ -147,18 +146,18 @@ export class HttpEndpoints {
     return params.toString()
   }
 
-  private static createRequest<
+  private static _createRequest<
     TMethod extends ApiRequestMethod,
     TResponseBody extends ResponseBody = ResponseBody
   >(
     method: TMethod,
     path: string,
-    requestInit: IEndpointCreateRequestInit = {}
+    requestInit: EndpointCreateRequestInit = {}
   ): IApiRequestParams<TMethod, TResponseBody> {
     let url = this.buildPath(path)
 
     if (requestInit.query) {
-      url += `?${this.serializeQuery(requestInit.query)}`
+      url += `?${this._serializeQuery(requestInit.query)}`
     }
 
     return {
@@ -170,75 +169,74 @@ export class HttpEndpoints {
   }
 }
 
-export const restful = (BaseEndpoints: typeof HttpEndpoints) =>
-  class RestEndpoints extends BaseEndpoints {
-    protected static collectionPath = ''
+export class RestEndpoints extends HttpEndpoints {
+  protected static _collectionPath = ''
 
-    protected static singlePath(id: ApiParam) {
-      return dynamicPath('/:id', {id})
-    }
-
-    /**
-     * Returns the path for a given resource id, as a convenience.
-     */
-    static pathToResource(id: ApiParam) {
-      return super.buildPath(this.singlePath(id))
-    }
-
-    /**
-     * Performs a `GET` at `/`, appending an optional `query`
-     * @param query Query parameters
-     */
-    protected static list<TResponseBody extends ResponseBody = ResponseBody>(
-      query?: ApiQueryParams
-    ) {
-      return super.get<TResponseBody>(this.collectionPath, {query})
-    }
-
-    /**
-     * Performs a `POST` at `/`, using an optional request `body`
-     */
-    protected static create<TResponseBody extends ResponseBody = ResponseBody>(
-      body?: RequestBody
-    ) {
-      return super.post<TResponseBody>(this.collectionPath, {body})
-    }
-
-    /**
-     * Performs a `GET` at `/:id`
-     */
-    protected static findById<
-      TResponseBody extends ResponseBody = ResponseBody
-    >(id: ApiParam) {
-      return super.get<TResponseBody>(this.singlePath(id))
-    }
-
-    /**
-     * Performs a `PUT` at `/:id`, using an optional request `body`
-     */
-    protected static update<TResponseBody extends ResponseBody = ResponseBody>(
-      id: ApiParam,
-      body?: RequestBody
-    ) {
-      return super.put<TResponseBody>(this.singlePath(id), {body})
-    }
-
-    /**
-     * Performs a `PATCH` at `/:id`, using an optional request `body`
-     */
-    protected static partialUpdate<
-      TResponseBody extends ResponseBody = ResponseBody
-    >(id: ApiParam, body?: RequestBody) {
-      return super.patch<TResponseBody>(this.singlePath(id), {body})
-    }
-
-    /**
-     * Performs a `DELETE` at `/:id`, using an optional request `body`
-     */
-    protected static delete(id: ApiParam, body?: RequestBody) {
-      return super.delete(this.singlePath(id), {body})
-    }
+  protected static _singlePath(id: ApiParam) {
+    return dynamicPath('/:id', {id})
   }
+
+  /**
+   * Returns the path for a given resource id, as a convenience.
+   */
+  static pathToResource(id: ApiParam) {
+    return super.buildPath(this._singlePath(id))
+  }
+
+  /**
+   * Performs a `GET` at `/`, appending an optional `query`
+   * @param query Query parameters
+   */
+  protected static _list<TResponseBody extends ResponseBody = ResponseBody>(
+    query?: ApiQueryParams
+  ) {
+    return super._get<TResponseBody>(this._collectionPath, {query})
+  }
+
+  /**
+   * Performs a `POST` at `/`, using an optional request `body`
+   */
+  protected static _create<TResponseBody extends ResponseBody = ResponseBody>(
+    body?: RequestBody
+  ) {
+    return super._post<TResponseBody>(this._collectionPath, {body})
+  }
+
+  /**
+   * Performs a `GET` at `/:id`
+   */
+  protected static _findById<TResponseBody extends ResponseBody = ResponseBody>(
+    id: ApiParam
+  ) {
+    return super._get<TResponseBody>(this._singlePath(id))
+  }
+
+  /**
+   * Performs a `PUT` at `/:id`, using an optional request `body`
+   */
+  protected static _update<TResponseBody extends ResponseBody = ResponseBody>(
+    id: ApiParam,
+    body?: RequestBody
+  ) {
+    return super._put<TResponseBody>(this._singlePath(id), {body})
+  }
+
+  /**
+   * Performs a `PATCH` at `/:id`, using an optional request `body`
+   */
+  protected static _partialUpdate<
+    TResponseBody extends ResponseBody = ResponseBody
+  >(id: ApiParam, body?: RequestBody) {
+    return super._patch<TResponseBody>(this._singlePath(id), {body})
+  }
+
+  /**
+   * Performs a `DELETE` at `/:id`, using an optional request `body`
+   */
+  protected static _destroy(id: ApiParam, body?: RequestBody) {
+    return super._delete(this._singlePath(id), {body})
+  }
+}
 
 /**
  * Applies colon-delimited path params to a given path pattern

@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "lib": ["es2017", "dom"],
+    "declaration": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "module": "esnext",
+    "target": "es2015",
+    "esModuleInterop": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": false,
+    "noImplicitReturns": true,
+    "strict": true,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "jsx": "react",
+    "types": []
+  },
+  "include": ["src/**/*.tsx"],
+  "exclude": ["node_modules", "src/**/*.spec.tsx"]
+}

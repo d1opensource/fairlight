@@ -4,14 +4,15 @@ import {DEFAULT_FETCH_POLICY} from '../constants'
 import {ApiError} from '../errors'
 import {GenericCache} from '../generic-cache'
 import {applyHeaders, createSubscription, getParamsId} from '../lib'
-import {ApiRequestFetcher, IRequestFetcher} from '../request-fetcher'
+import {ApiRequestFetcher} from '../request-fetcher'
 import {
   ApiRequestMethod,
+  ApiRequestOptions,
   IApiParseResponseJson,
-  IApiRequestOptions,
   IApiRequestParams,
   IApiSerializeRequestJson,
   RequestBody,
+  RequestFetcher,
   ResponseBody
 } from '../typings'
 
@@ -37,7 +38,7 @@ export class ApiRequestManager {
 
   private emitter = new EventEmitter()
 
-  private requestFetcher: IRequestFetcher
+  private requestFetcher: RequestFetcher
 
   private serializeRequestJson: IApiSerializeRequestJson
 
@@ -47,29 +48,28 @@ export class ApiRequestManager {
 
   private inProgressRequestCache = new GenericCache<{
     id: symbol
-    fetchPromise: Promise<ResponseBody>
+    fetchPromise: Promise<ResponseBody | null>
   }>()
 
-  constructor(
-    params: {
-      /**
-       * Base URL of API to prefix all requests with
-       */
-      baseUrl?: string
-      /**
-       * When provided, all API JSON request bodies will be run
-       * through this transformation function before the API request
-       */
-      serializeRequestJson?: IApiSerializeRequestJson
-      /**
-       * When provided, all API JSON response bodies will be run
-       * through this transformation function before returning the response
-       */
-      parseResponseJson?: IApiParseResponseJson
-    } = {}
-  ) {
+  constructor(params: {
+    /**
+     * Base URL of API to prefix all requests with
+     */
+    baseUrl?: string
+    /**
+     * When provided, all API JSON request bodies will be run
+     * through this transformation function before the API request
+     */
+    serializeRequestJson?: IApiSerializeRequestJson
+    /**
+     * When provided, all API JSON response bodies will be run
+     * through this transformation function before returning the response
+     */
+    parseResponseJson?: IApiParseResponseJson
+    requestFetcher?: RequestFetcher
+  }) {
     this.baseUrl = params.baseUrl || ''
-    this.requestFetcher = new ApiRequestFetcher()
+    this.requestFetcher = params.requestFetcher || new ApiRequestFetcher()
     this.serializeRequestJson = params.serializeRequestJson || identity
     this.parseResponseJson = params.parseResponseJson || identity
   }
@@ -84,8 +84,8 @@ export class ApiRequestManager {
    */
   getResponseBody = <TResponseBody extends ResponseBody>(
     params: IApiRequestParams<ApiRequestMethod, TResponseBody>,
-    options: IApiRequestOptions
-  ): Promise<TResponseBody> => {
+    options: ApiRequestOptions
+  ): Promise<TResponseBody | null> => {
     if (params.method !== 'GET') {
       // only cache in-progress requests for GET requests
       return this.fetchResponseBody(params, options) as Promise<TResponseBody>
@@ -111,9 +111,9 @@ export class ApiRequestManager {
 
   private async createGetPromise(
     params: IApiRequestParams,
-    options: IApiRequestOptions,
+    options: ApiRequestOptions,
     id: symbol
-  ): Promise<ResponseBody> {
+  ): Promise<ResponseBody | null> {
     const paramsId = getParamsId(params)
 
     try {
@@ -121,7 +121,7 @@ export class ApiRequestManager {
     } finally {
       const cachedRequest = this.inProgressRequestCache.get(paramsId)
 
-      if (cachedRequest?.id === id) {
+      if (cachedRequest && cachedRequest.id === id) {
         this.inProgressRequestCache.del(paramsId)
       }
     }
@@ -151,12 +151,7 @@ export class ApiRequestManager {
    * Returns `true` if a `GET` request matches params
    */
   requestInProgress = (params: IApiRequestParams): boolean => {
-    const paramsKey = getParamsId(params)
-    if (params.method === 'GET') {
-      return this.inProgressRequestCache.has(paramsKey)
-    }
-
-    return false
+    return this.inProgressRequestCache.has(getParamsId(params))
   }
 
   /**
@@ -172,8 +167,8 @@ export class ApiRequestManager {
 
   private fetchResponseBody = async (
     params: IApiRequestParams,
-    options: IApiRequestOptions
-  ): Promise<ResponseBody> => {
+    options: ApiRequestOptions
+  ): Promise<ResponseBody | null> => {
     const {fetchPolicy = DEFAULT_FETCH_POLICY} = options
     try {
       let headers = new Headers(this.defaultHeaders)
@@ -182,7 +177,7 @@ export class ApiRequestManager {
         headers = applyHeaders(headers, params.headers)
       }
 
-      let body: BodyInit
+      let body: BodyInit | undefined
 
       if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(params.method)) {
         const paramBody = (params as {body: RequestBody}).body
@@ -221,6 +216,7 @@ export class ApiRequestManager {
 
       return responseBody
     } catch (error) {
+      /* istanbul ignore next */
       if (error instanceof ApiError && error.responseType === 'json') {
         error.responseBody = this.parseResponseJson(error.responseBody)
       }

@@ -1,6 +1,4 @@
-import {useEffect, useMemo, useReducer} from 'react'
-
-import {usePrevious} from '@d1g1t/lib/hooks'
+import {useEffect, useMemo, useReducer, useRef} from 'react'
 
 import {READ_CACHE_POLICIES} from '../../api/constants'
 import {getParamsId} from '../../api/lib'
@@ -14,7 +12,13 @@ import {useApi} from '../use-api'
 import {useApiQueryActions} from './actions'
 import {useApiQueryReducer} from './reducer'
 
-export interface IUseApiQueryActions<TResponseBody extends ResponseBody> {
+interface UseApiQueryData<TResponseBody extends ResponseBody> {
+  data: TResponseBody | undefined | null
+  loading: boolean
+  error: Error | null
+}
+
+export interface UseApiQueryActions<TResponseBody extends ResponseBody> {
   /**
    * Sets the response data of the Api request manually.
    *
@@ -72,10 +76,10 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
      */
     dontReinitialize?: boolean
   } = {}
-): [Loadable<TResponseBody>, IUseApiQueryActions<TResponseBody>] {
+): [UseApiQueryData<TResponseBody>, UseApiQueryActions<TResponseBody>] {
   const api = useApi()
   const fetchPolicy = opts.fetchPolicy || api.defaultFetchPolicy
-  const paramsId = getParamsId(params)
+  const paramsId = params && getParamsId(params)
   const [state, dispatch] = useReducer(useApiQueryReducer, null, () => ({
     id: null,
     paramsId: null,
@@ -92,7 +96,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
   useEffect(() => {
     if (!params) {
       dispatch(useApiQueryActions.reset())
-      return
+      return undefined
     }
 
     const unsubscribe = api.onCacheUpdate(params, (responseBody) => {
@@ -107,7 +111,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
       // don't bother kicking off a request
       // since we already have the cached data
       useApiQueryActions.setData(cachedData)
-      return
+      return undefined
     }
 
     const id = Symbol()
@@ -115,7 +119,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
     dispatch(
       useApiQueryActions.request({
         id,
-        paramsId,
+        paramsId: paramsId as string,
         dontReinitialize: opts.dontReinitialize,
         initData: cachedData || null
       })
@@ -126,9 +130,21 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
           fetchPolicy,
           forceNewFetch: opts.forceNewFetch
         })
-        dispatch(useApiQueryActions.success({id, paramsId, data}))
+        dispatch(
+          useApiQueryActions.success({
+            id,
+            paramsId: paramsId as string,
+            data
+          })
+        )
       } catch (error) {
-        dispatch(useApiQueryActions.failure({id, paramsId, error}))
+        dispatch(
+          useApiQueryActions.failure({
+            id,
+            paramsId: paramsId as string,
+            error
+          })
+        )
       }
     })()
 
@@ -145,7 +161,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
   const returnedState = useMemo(
     () => ({
       loading: aboutToStartNewRequest || state.loading,
-      data: state.data,
+      data: state.data as TResponseBody | null | undefined,
       error: state.error
     }),
     [aboutToStartNewRequest, state.data, state.loading, state.error]
@@ -155,7 +171,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
     returnedState,
     {
       setData: (data) => {
-        if (fetchPolicy === 'no-cache') {
+        if (fetchPolicy === 'no-cache' || !params) {
           dispatch(useApiQueryActions.setData(data))
         } else {
           // write to the cache, which will in turn
@@ -165,6 +181,10 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
       },
 
       refetch: async (refetchOpts = {}) => {
+        if (!paramsId || !params) {
+          return
+        }
+
         const id = Symbol()
 
         dispatch(
@@ -187,4 +207,18 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
       }
     }
   ]
+}
+
+/**
+ * Returns previous value, or null if first render pass
+ * @param value updating value
+ */
+function usePrevious<T extends any>(value: T | null): T | null {
+  const ref = useRef<T | null>(null)
+
+  useEffect(() => {
+    ref.current = value
+  }, [value])
+
+  return ref.current
 }

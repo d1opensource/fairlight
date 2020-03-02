@@ -1,7 +1,19 @@
-import {getParamsId} from '../../../api/lib';
-import {IApiRequestParams} from '../../../api/typings';
-import {useApiQueryActions} from '../actions';
-import {useApiQueryReducer} from '../reducer';
+import {getParamsId} from '../../api/lib'
+import {IApiRequestParams} from '../../api/typings'
+import {useApiQueryActions} from './actions'
+import {useApiQueryReducer} from './reducer'
+
+it('defaults to initial state', () => {
+  expect(
+    useApiQueryReducer(undefined, {type: '@@INIT', payload: null} as any)
+  ).toEqual({
+    id: null,
+    paramsId: null,
+    loading: false,
+    data: null,
+    error: null
+  })
+})
 
 it('stores a successful response data if it matches the most recent request', () => {
   let state = useApiQueryReducer(

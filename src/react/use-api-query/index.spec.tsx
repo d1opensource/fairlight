@@ -3,11 +3,11 @@ import React from 'react'
 import {cleanup} from '@testing-library/react'
 import {act, renderHook} from '@testing-library/react-hooks'
 
-import {useApiQuery} from '../'
-import {Api} from '../../../api'
-import {ApiError} from '../../../api/errors'
-import {ApiRequestFetchPolicy, IApiRequestParams} from '../../../api/typings'
-import {ApiProvider} from '../../context'
+import {Api} from '../../api'
+import {ApiError} from '../../api/errors'
+import {ApiRequestFetchPolicy, IApiRequestParams} from '../../api/typings'
+import {ApiProvider} from '../context'
+import {useApiQuery} from './'
 
 let api: Api
 
@@ -23,9 +23,7 @@ beforeEach(() => {
   } as any
 })
 
-const wrapper = ({children}) => (
-  <ApiProvider value={api}>{children}</ApiProvider>
-)
+const wrapper = ({children}) => <ApiProvider api={api}>{children}</ApiProvider>
 
 it('does not make a query if there are no params', () => {
   const {result} = renderHook(() => useApiQuery(null), {wrapper})
@@ -457,6 +455,18 @@ describe('refetch', () => {
       loading: false,
       error: null
     })
+  })
+
+  it('does not make a request if there are no params defined', async () => {
+    const {result} = renderHook(() => useApiQuery(null), {
+      wrapper
+    })
+
+    act(() => {
+      result.current[1].refetch()
+    })
+
+    expect(api.request as jest.Mock).not.toBeCalled()
   })
 })
 
