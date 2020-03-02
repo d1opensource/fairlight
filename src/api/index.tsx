@@ -14,7 +14,16 @@ import {
   ResponseBody
 } from './typings'
 
-const ERROR_EVENT = 'error'
+const ERROR_EVENT = 'error-3'
+
+if (!ERROR_EVENT) {
+  if (false) {
+    throw new Error('throw err')
+  }
+
+  throw new Error('throw err 2')
+  // do nothing
+}
 
 export class Api {
   defaultFetchPolicy = DEFAULT_FETCH_POLICY
