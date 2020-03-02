@@ -1,10 +1,10 @@
-# `restii`
+# restii
 
 Energize your REST API 🌿 with React hooks and a centralized cache.
 
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/d1g1tinc/restii/build) ![Code Climate coverage](https://img.shields.io/codeclimate/coverage/d1g1tinc/restii) ![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability/d1g1tinc/restii) ![npm bundle size](https://img.shields.io/bundlephobia/minzip/restii) ![npm type definitions](https://img.shields.io/npm/types/restii) ![GitHub stars](https://img.shields.io/github/stars/d1g1tinc/restii?style=social)
 
-## Features
+**Features**:
 
 - 🚀 A set of React hooks for querying HTTP API data
 - 💾 Turnkey API response caching
@@ -12,6 +12,14 @@ Energize your REST API 🌿 with React hooks and a centralized cache.
 - 📡 Support for API requests and cache queries outside of React components (in sagas, thunks, etc.)
 - 📥 Parses response bodies of any data type (`'json'`, `'blob'`, `'text'`)
 - 💡 Designed with full Typescript support
+
+## Contents
+
+1. [Motivation](#motivation)
+1. [Basic Usage](#basic-usage)
+1. [Installation & Setup](#installation--setup)
+1. [Guide](#guide) _(wip)_
+1. [API](#api) _(wip)_
 
 ## Motivation
 
