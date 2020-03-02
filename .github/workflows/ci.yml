@@ -10,24 +10,41 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
-      - uses: actions/setup-node@master
+      - name: Checkout (pull_request)
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Checkout (push)
+        if: github.event_name == 'push'
+        uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
         with:
           node-version: 12
           registry-url: https://registry.npmjs.org/
       - run: npm install
-      - run: npm test -- --ci
+      - run: npm test -- --ci --coverage
       - run: npm run lint
-      - uses: paambaati/codeclimate-action@v2.5.3
-        env:
-          CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
+      - name: Set ENV for codeclimate (pull_request)
+        run: |
+          git fetch --no-tags --prune --depth=1 origin +refs/heads/$GITHUB_HEAD_REF:refs/remotes/origin/$GITHUB_HEAD_REF
+          echo "::set-env name=GIT_BRANCH::$GITHUB_HEAD_REF"
+          echo "::set-env name=GIT_COMMIT_SHA::$(git rev-parse origin/$GITHUB_HEAD_REF)"
+        if: github.event_name == 'pull_request'
+      - name: Set ENV for codeclimate (push)
+        run: |
+          echo "::set-env name=GIT_BRANCH::$GITHUB_REF"
+          echo "::set-env name=GIT_COMMIT_SHA::$GITHUB_SHA"
+        if: github.event_name == 'push'
+      - name: Code Climate Test Reporter
+        uses: aktions/codeclimate-test-reporter@v1
         with:
-          coverageCommand: npm test -- --ci --coverage
+          codeclimate-test-reporter-id: ${{ secrets.CC_TEST_REPORTER_ID }}
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
-      - uses: actions/setup-node@master
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
         with:
           node-version: 12
           registry-url: https://registry.npmjs.org/
