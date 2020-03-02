@@ -17,6 +17,7 @@ jobs:
           registry-url: https://registry.npmjs.org/
       - run: npm install
       - run: npm test -- --ci
+      - run: npm run lint
       - uses: paambaati/codeclimate-action@v2.5.3
         env:
           CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
