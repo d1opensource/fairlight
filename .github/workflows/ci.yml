@@ -17,8 +17,13 @@ jobs:
           registry-url: https://registry.npmjs.org/
       - run: npm install
       - run: npm test -- --ci
+      - uses: paambaati/codeclimate-action@v2.5.3
+        env:
+          CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
+        with:
+          coverageCommand: npm test -- --ci --coverage
   build:
-    needs: [ test ]
+    needs: [test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
@@ -28,17 +33,3 @@ jobs:
           registry-url: https://registry.npmjs.org/
       - run: npm install
       - run: npm run build
-  report_coverage:
-    needs: [ test ]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@master
-    - uses: actions/setup-node@master
-      with:
-        node-version: '12'
-    - run: npm install
-    - uses: paambaati/codeclimate-action@v2.5.3
-      env:
-        CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
-      with:
-        coverageCommand: npm test -- --ci --coverage
