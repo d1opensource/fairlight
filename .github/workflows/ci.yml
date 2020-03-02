@@ -23,7 +23,6 @@ jobs:
         with:
           coverageCommand: npm test -- --ci --coverage
   build:
-    needs: [test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
