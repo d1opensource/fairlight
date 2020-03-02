@@ -11,7 +11,7 @@ export type ApiResponseType = 'json' | 'text' | 'blob'
 
 interface ApiCommonRequestParams<TMethod extends ApiRequestMethod> {
   url: string
-  method: TMethod
+  method?: TMethod
   headers?: ApiHeaders
   responseType?: ApiResponseType
   extraKey?: string

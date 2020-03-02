@@ -1,6 +1,6 @@
 import EventEmitter from 'eventemitter3'
 
-import {DEFAULT_FETCH_POLICY} from '../constants'
+import {DEFAULT_FETCH_POLICY, DEFAULT_REQUEST_METHOD} from '../constants'
 import {ApiError} from '../errors'
 import {GenericCache} from '../generic-cache'
 import {applyHeaders, createSubscription, getParamsId} from '../lib'
@@ -168,6 +168,7 @@ export class ApiRequestManager {
     params: IApiRequestParams,
     options: ApiRequestOptions
   ): Promise<ResponseBody | null> => {
+    const {method = DEFAULT_REQUEST_METHOD} = params
     const {fetchPolicy = DEFAULT_FETCH_POLICY} = options
     try {
       let headers = new Headers(this.defaultHeaders)
@@ -178,7 +179,7 @@ export class ApiRequestManager {
 
       let body: BodyInit | undefined
 
-      if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(params.method)) {
+      if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(method)) {
         const paramBody = (params as {body: RequestBody}).body
 
         if (
@@ -197,7 +198,7 @@ export class ApiRequestManager {
       }
 
       const response = await this.requestFetcher.getResponse({
-        method: params.method,
+        method,
         url: `${this.baseUrl}${params.url}`,
         body,
         headers,

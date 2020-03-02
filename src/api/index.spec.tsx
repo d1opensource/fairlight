@@ -12,11 +12,11 @@ beforeEach(() => {
   fetchMock.mockClear()
 })
 
-it('does not require a base URL', async () => {
+it('does not require a base URL or method to make a GET request', async () => {
   fetchMock.mockResponseOnce(JSON.stringify({num: 12345}), {
     headers: {'content-type': 'application/json'}
   })
-  await new Api().request({method: 'GET', url: 'http://some_site.com/endpoint'})
+  await new Api().request({url: 'http://some_site.com/endpoint'})
   const request = fetchMock.mock.calls[0][0] as Request
   expect(request.url).toEqual('http://some_site.com/endpoint')
 })

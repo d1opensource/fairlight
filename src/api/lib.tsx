@@ -1,5 +1,6 @@
 import EventEmitter from 'eventemitter3'
 
+import {DEFAULT_REQUEST_METHOD} from './constants'
 import {ApiHeaders, ApiRequestMethod, IApiRequestParams} from './typings'
 
 /**
@@ -11,7 +12,7 @@ export function getParamsId(
   params: IApiRequestParams<ApiRequestMethod>
 ): string {
   return JSON.stringify([
-    params.method,
+    params.method || DEFAULT_REQUEST_METHOD,
     params.url,
     params.responseType || '',
     serializeHeaders(params.headers),

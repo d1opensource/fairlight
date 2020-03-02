@@ -8,6 +8,12 @@ describe('getParamsId', () => {
       url: '/endpoint'
     }
 
+    expect(getParamsId(requestParams)).toEqual(
+      getParamsId({
+        url: '/endpoint' // method defaults to GET
+      })
+    )
+
     expect(getParamsId(requestParams)).not.toEqual(
       getParamsId({
         ...requestParams,
