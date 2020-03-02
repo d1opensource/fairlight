@@ -29,7 +29,7 @@ export interface ApiMutationRequestParams<
   body?: RequestBody
 }
 
-export type IApiRequestParams<
+export type ApiRequestParams<
   TMethod extends ApiRequestMethod = ApiRequestMethod,
   TResponseBody extends ResponseBody = ResponseBody
 > = TMethod extends GetDeleteRequestMethod
@@ -38,9 +38,9 @@ export type IApiRequestParams<
   ? ApiMutationRequestParams<TMethod, TResponseBody>
   : never
 
-export type IApiSerializeRequestJson = (body: object) => object
+export type ApiSerializeRequestJson = (body: object) => object
 
-export type IApiParseResponseJson = (body: object) => object
+export type ApiParseResponseJson = (body: object) => object
 
 export type ApiRequestFetchPolicy =
   /**

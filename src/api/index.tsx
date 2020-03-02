@@ -6,12 +6,12 @@ import {GenericCache} from './generic-cache'
 import {createSubscription, genCacheUpdateEvent, getParamsId} from './lib'
 import {ApiRequestManager} from './request-manager'
 import {
+  ApiParseResponseJson,
   ApiRequestFetchPolicy,
   ApiRequestMethod,
   ApiRequestOptions,
-  IApiParseResponseJson,
-  IApiRequestParams,
-  IApiSerializeRequestJson,
+  ApiRequestParams,
+  ApiSerializeRequestJson,
   ResponseBody
 } from './typings'
 
@@ -43,12 +43,12 @@ export class Api {
        * When provided, all API JSON request bodies will be run
        * through this transformation function before the API request
        */
-      serializeRequestJson?: IApiSerializeRequestJson
+      serializeRequestJson?: ApiSerializeRequestJson
       /**
        * When provided, all API JSON response bodies will be run
        * through this transformation function before returning the response
        */
-      parseResponseJson?: IApiParseResponseJson
+      parseResponseJson?: ApiParseResponseJson
     } = {}
   ) {
     this.requestManager = new ApiRequestManager(params)
@@ -63,7 +63,7 @@ export class Api {
    * Makes an API request
    */
   request = <TResponseBody extends ResponseBody>(
-    params: IApiRequestParams<ApiRequestMethod, TResponseBody>,
+    params: ApiRequestParams<ApiRequestMethod, TResponseBody>,
     options: ApiRequestOptions = {}
   ): Promise<TResponseBody> => {
     const {fetchPolicy = DEFAULT_FETCH_POLICY} = options
@@ -102,7 +102,7 @@ export class Api {
   /**
    * Returns `true` if a `GET` of `DELETE` request matches params
    */
-  requestInProgress = (params: IApiRequestParams): boolean => {
+  requestInProgress = (params: ApiRequestParams): boolean => {
     return this.requestManager.requestInProgress(params)
   }
 
@@ -110,7 +110,7 @@ export class Api {
    * Saves a response directly to the cache
    */
   writeCachedResponse = <TResponseBody extends ResponseBody>(
-    params: IApiRequestParams<ApiRequestMethod, TResponseBody>,
+    params: ApiRequestParams<ApiRequestMethod, TResponseBody>,
     responseBody: TResponseBody
   ) => {
     this.responseBodyCache.set(getParamsId(params), responseBody)
@@ -126,7 +126,7 @@ export class Api {
    * Note that if there is a cache miss, it will return `undefined`
    */
   readCachedResponse = <TResponseBody extends ResponseBody>(
-    params: IApiRequestParams<ApiRequestMethod, TResponseBody>
+    params: ApiRequestParams<ApiRequestMethod, TResponseBody>
   ): TResponseBody => {
     return this.responseBodyCache.get(getParamsId(params)) as TResponseBody
   }
@@ -135,7 +135,7 @@ export class Api {
    * Subscribes to cache updates for a given param's response
    */
   onCacheUpdate = <TResponseBody extends ResponseBody>(
-    params: IApiRequestParams<ApiRequestMethod, TResponseBody>,
+    params: ApiRequestParams<ApiRequestMethod, TResponseBody>,
     listener: (responseBody: TResponseBody) => void
   ): (() => void) => {
     const event = genCacheUpdateEvent(params)

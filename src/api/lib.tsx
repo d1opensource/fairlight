@@ -1,7 +1,7 @@
 import EventEmitter from 'eventemitter3'
 
 import {DEFAULT_REQUEST_METHOD} from './constants'
-import {ApiHeaders, ApiRequestMethod, IApiRequestParams} from './typings'
+import {ApiHeaders, ApiRequestMethod, ApiRequestParams} from './typings'
 
 /**
  * Returns an id represent the request parameters.
@@ -9,7 +9,7 @@ import {ApiHeaders, ApiRequestMethod, IApiRequestParams} from './typings'
  * This is used to identify the request for caching and other purposes.
  */
 export function getParamsId(
-  params: IApiRequestParams<ApiRequestMethod>
+  params: ApiRequestParams<ApiRequestMethod>
 ): string {
   return JSON.stringify([
     params.method || DEFAULT_REQUEST_METHOD,
@@ -53,7 +53,7 @@ export function applyHeaders(prevHeaders: Headers, apiHeaders: ApiHeaders) {
 }
 
 export function genCacheUpdateEvent(
-  params: IApiRequestParams<ApiRequestMethod>
+  params: ApiRequestParams<ApiRequestMethod>
 ) {
   return `cacheUpdate.${getParamsId(params)}`
 }

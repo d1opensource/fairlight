@@ -5,7 +5,7 @@ import {getParamsId} from '../../api/lib'
 import {
   ApiRequestFetchPolicy,
   ApiRequestMethod,
-  IApiRequestParams,
+  ApiRequestParams,
   ResponseBody
 } from '../../api/typings'
 import {ApiContext} from '../context'
@@ -57,7 +57,7 @@ export interface UseApiQueryActions<TResponseBody extends ResponseBody> {
  * instance of the response data
  */
 export function useApiQuery<TResponseBody extends ResponseBody>(
-  params: IApiRequestParams<ApiRequestMethod, TResponseBody> | null,
+  params: ApiRequestParams<ApiRequestMethod, TResponseBody> | null,
   opts: {
     fetchPolicy?: ApiRequestFetchPolicy
     deduplicate?: boolean

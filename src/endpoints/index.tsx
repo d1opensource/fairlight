@@ -3,7 +3,7 @@
 import {
   ApiHeaders,
   ApiRequestMethod,
-  IApiRequestParams,
+  ApiRequestParams,
   RequestBody,
   ResponseBody
 } from '../api/typings'
@@ -154,7 +154,7 @@ export class HttpEndpoints {
     method: TMethod,
     path: string,
     requestInit: EndpointCreateRequestInit = {}
-  ): IApiRequestParams<TMethod, TResponseBody> {
+  ): ApiRequestParams<TMethod, TResponseBody> {
     let url = this.buildPath(path)
 
     if (requestInit.query) {
@@ -167,7 +167,7 @@ export class HttpEndpoints {
       headers: requestInit.headers,
       body: requestInit.body,
       extraKey: requestInit.extraKey
-    } as IApiRequestParams<TMethod, TResponseBody>
+    } as ApiRequestParams<TMethod, TResponseBody>
   }
 }
 
