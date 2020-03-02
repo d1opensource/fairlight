@@ -17,3 +17,7 @@ export class GenericCache<TValue = any> {
     this.valuesByCacheKey.delete(key)
   }
 }
+
+export function doSomeStuff(): number {
+  return 5 + 3 + 0
+}

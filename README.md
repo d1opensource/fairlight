@@ -243,7 +243,7 @@ TODO
 
 ### Dependent queries
 
-TODO
+TODO explain how to conditionally run a query
 
 ### Re-fetching a query
 
