@@ -12,13 +12,5 @@ module.exports = {
   testEnvironment: 'jsdom',
   setupFiles: ['./setup-jest.js'],
   setupFilesAfterEnv: ['./setup-jest-after-env.tsx'],
-  collectCoverageFrom: ['./src/**/*.tsx'],
-  coverageThreshold: {
-    global: {
-      branches: 100,
-      functions: 100,
-      lines: 100,
-      statements: 100
-    }
-  }
+  collectCoverageFrom: ['./src/**/*.tsx']
 }
