@@ -1,7 +1,7 @@
-import {IApiRequestParams, IRequestFetcher} from '../typings'
+import {IApiRequestParams, RequestFetcher} from '../typings'
 import {ApiRequestManager} from './'
 
-const requestFetcher: IRequestFetcher = {
+const requestFetcher: RequestFetcher = {
   getResponse: jest.fn()
 }
 
