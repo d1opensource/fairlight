@@ -19,5 +19,6 @@ export class GenericCache<TValue = any> {
 }
 
 export function doSomeStuff(): number {
-  return 5 + 3 + 0
+  const num = 1
+  return 5 + 3 + num
 }
