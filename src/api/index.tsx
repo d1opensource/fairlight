@@ -14,13 +14,12 @@ import {
   ResponseBody
 } from './typings'
 
-const ERROR_EVENT = 'error-3'
+let ERROR_EVENT = 'error-3'
 
 if (!ERROR_EVENT) {
-  if (false) {
-    throw new Error('throw err')
-  }
-
+  ERROR_EVENT = 'error-2'
+  ERROR_EVENT = 'error-3'
+  ERROR_EVENT = 'error-4'
   throw new Error('throw err 2')
   // do nothing
 }
