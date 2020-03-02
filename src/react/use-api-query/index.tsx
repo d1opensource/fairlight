@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useReducer, useRef} from 'react'
+import {useContext, useEffect, useMemo, useReducer, useRef} from 'react'
 
 import {READ_CACHE_POLICIES} from '../../api/constants'
 import {getParamsId} from '../../api/lib'
@@ -8,7 +8,7 @@ import {
   IApiRequestParams,
   ResponseBody
 } from '../../api/typings'
-import {useApi} from '../use-api'
+import {ApiContext} from '../context'
 import {useApiQueryActions} from './actions'
 import {useApiQueryReducer} from './reducer'
 
@@ -69,8 +69,8 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
     dontReinitialize?: boolean
   } = {}
 ): [UseApiQueryData<TResponseBody>, UseApiQueryActions<TResponseBody>] {
-  const api = useApi()
-  const fetchPolicy = opts.fetchPolicy || api.defaultFetchPolicy
+  const {api, defaultFetchPolicy} = useContext(ApiContext)
+  const fetchPolicy = opts.fetchPolicy || defaultFetchPolicy
   const paramsId = params && getParamsId(params)
   const [state, dispatch] = useReducer(useApiQueryReducer, null, () => ({
     id: null,

@@ -6,6 +6,7 @@ import {GenericCache} from './generic-cache'
 import {createSubscription, genCacheUpdateEvent, getParamsId} from './lib'
 import {ApiRequestManager} from './request-manager'
 import {
+  ApiRequestFetchPolicy,
   ApiRequestMethod,
   ApiRequestOptions,
   IApiParseResponseJson,
@@ -17,7 +18,7 @@ import {
 const ERROR_EVENT = 'error'
 
 export class Api {
-  defaultFetchPolicy = DEFAULT_FETCH_POLICY
+  defaultFetchPolicy: ApiRequestFetchPolicy
 
   private responseBodyCache = new GenericCache<ResponseBody>()
 
@@ -32,6 +33,13 @@ export class Api {
        */
       baseUrl?: string
       /**
+       * When set, overrides the fetch policy for all requests.
+       *
+       * Note that this differs from the `useApiQuery` default fetch policy,
+       * which can be configured using `ApiProvider`.
+       */
+      defaultFetchPolicy?: ApiRequestFetchPolicy
+      /**
        * When provided, all API JSON request bodies will be run
        * through this transformation function before the API request
        */
@@ -44,6 +52,7 @@ export class Api {
     } = {}
   ) {
     this.requestManager = new ApiRequestManager(params)
+    this.defaultFetchPolicy = params.defaultFetchPolicy || DEFAULT_FETCH_POLICY
     this.requestManager.onReceivedResponseBody(this.writeCachedResponse)
     this.requestManager.onError((error) =>
       this.emitter.emit(ERROR_EVENT, error)

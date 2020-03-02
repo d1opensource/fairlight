@@ -159,6 +159,41 @@ it('can disable reinitialization of data between successive requests', async () 
 })
 
 describe('cache', () => {
+  it('defaults fetchPolicy to cache-and-fetch', async () => {
+    const params: IApiRequestParams = {method: 'GET', url: '/endpoint'}
+    const {waitForNextUpdate} = renderHook(() => useApiQuery(params), {
+      wrapper
+    })
+
+    await waitForNextUpdate()
+
+    expect(api.request).toBeCalledWith(params, {
+      deduplicate: undefined,
+      fetchPolicy: 'cache-and-fetch'
+    })
+  })
+
+  it('uses defaultFetchPolicy from context', async () => {
+    const params: IApiRequestParams = {method: 'GET', url: '/endpoint'}
+    const defaultFetchPolicy = 'no-cache'
+    const {waitForNextUpdate} = renderHook(() => useApiQuery(params), {
+      wrapper: function Wrapper({children}) {
+        return (
+          <ApiProvider api={api} defaultFetchPolicy={defaultFetchPolicy}>
+            {children}
+          </ApiProvider>
+        )
+      }
+    })
+
+    await waitForNextUpdate()
+
+    expect(api.request).toBeCalledWith(params, {
+      deduplicate: undefined,
+      fetchPolicy: defaultFetchPolicy
+    })
+  })
+
   it('initializes the data to null if there is no cached value for a cache-first policy', async () => {
     const params: IApiRequestParams = {method: 'GET', url: '/endpoint'}
     const response = {name: 'Test'}
@@ -374,9 +409,7 @@ describe('refetch', () => {
       })
 
       expect(api.request).toBeCalledWith(params, {
-        fetchPolicy: ['no-cache', null].includes(fetchPolicy)
-          ? 'no-cache'
-          : 'fetch-first',
+        fetchPolicy: fetchPolicy === 'no-cache' ? 'no-cache' : 'fetch-first',
         deduplicate: false
       })
 
@@ -418,7 +451,7 @@ describe('refetch', () => {
 
     expect(api.request).toBeCalledWith(params, {
       deduplicate: true,
-      fetchPolicy: 'no-cache'
+      fetchPolicy: 'fetch-first'
     })
 
     // eslint-disable-next-line
@@ -502,39 +535,39 @@ describe('setData', () => {
   it('imperatively sets data directly if there is no cache', async () => {
     const response = {name: 'Test'}
     ;(api.request as jest.Mock).mockResolvedValue(response)
-    const fetchPolicies: ApiRequestFetchPolicy[] = [null, 'no-cache']
+    ;(api.writeCachedResponse as jest.Mock).mockClear()
 
-    for (const fetchPolicy of fetchPolicies) {
-      ;(api.writeCachedResponse as jest.Mock).mockClear()
+    const {result, waitForNextUpdate} = renderHook(
+      () =>
+        useApiQuery(
+          {method: 'GET', url: '/endpoint'},
+          {fetchPolicy: 'no-cache'}
+        ),
+      {wrapper}
+    )
 
-      const {result, waitForNextUpdate} = renderHook(
-        () => useApiQuery({method: 'GET', url: '/endpoint'}, {fetchPolicy}),
-        {wrapper}
-      )
+    // eslint-disable-next-line
+    await waitForNextUpdate()
 
-      // eslint-disable-next-line
-      await waitForNextUpdate()
+    expect(result.current[0]).toEqual({
+      data: response,
+      loading: false,
+      error: null
+    })
 
-      expect(result.current[0]).toEqual({
-        data: response,
-        loading: false,
-        error: null
-      })
+    const nextData = {next: 'data'}
 
-      const nextData = {next: 'data'}
+    act(() => {
+      result.current[1].setData(nextData)
+    })
 
-      act(() => {
-        result.current[1].setData(nextData)
-      })
+    expect(api.writeCachedResponse).not.toBeCalled()
 
-      expect(api.writeCachedResponse).not.toBeCalled()
-
-      expect(result.current[0]).toEqual({
-        data: nextData,
-        loading: false,
-        error: null
-      })
-    }
+    expect(result.current[0]).toEqual({
+      data: nextData,
+      loading: false,
+      error: null
+    })
   })
 
   it('writes to the cache if fetchPolicy is not no-cache', async () => {
