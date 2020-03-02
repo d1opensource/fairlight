@@ -1,10 +1,6 @@
 import EventEmitter from 'eventemitter3'
 
-import {
-  DEFAULT_FETCH_POLICY,
-  DEFAULT_REQUEST_METHOD,
-  READ_CACHE_POLICIES
-} from './constants'
+import {DEFAULT_FETCH_POLICY, READ_CACHE_POLICIES} from './constants'
 import {ApiCacheMissError} from './errors'
 import {GenericCache} from './generic-cache'
 import {createSubscription, genCacheUpdateEvent, getParamsId} from './lib'
@@ -61,10 +57,9 @@ export class Api {
     params: IApiRequestParams<ApiRequestMethod, TResponseBody>,
     options: ApiRequestOptions = {}
   ): Promise<TResponseBody> => {
-    const {method = DEFAULT_REQUEST_METHOD} = params
     const {fetchPolicy = DEFAULT_FETCH_POLICY} = options
 
-    if (method !== 'GET' || !READ_CACHE_POLICIES.includes(fetchPolicy)) {
+    if (!READ_CACHE_POLICIES.includes(fetchPolicy)) {
       return this.requestManager.getResponseBody<TResponseBody>(
         params,
         options
