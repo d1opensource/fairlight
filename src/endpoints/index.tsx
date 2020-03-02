@@ -10,7 +10,7 @@ import {
 
 export type ApiQueryParams = Record<string, string | number | boolean>
 
-export interface IEndpointCreateRequestInit {
+export interface EndpointCreateRequestInit {
   query?: ApiQueryParams
   headers?: ApiHeaders
   body?: RequestBody
@@ -55,7 +55,7 @@ export class HttpEndpoints {
    */
   protected static _get<TResponseBody extends ResponseBody = ResponseBody>(
     path: string,
-    requestInit?: Omit<IEndpointCreateRequestInit, 'body'>
+    requestInit?: Omit<EndpointCreateRequestInit, 'body'>
   ) {
     return this._createRequest<'GET', TResponseBody>('GET', path, requestInit)
   }
@@ -68,7 +68,7 @@ export class HttpEndpoints {
    */
   protected static _post<TResponseBody extends ResponseBody = ResponseBody>(
     path: string,
-    requestInit?: IEndpointCreateRequestInit
+    requestInit?: EndpointCreateRequestInit
   ) {
     return this._createRequest<'POST', TResponseBody>('POST', path, requestInit)
   }
@@ -81,7 +81,7 @@ export class HttpEndpoints {
    */
   protected static _put<TResponseBody extends ResponseBody = ResponseBody>(
     path: string,
-    requestInit?: IEndpointCreateRequestInit
+    requestInit?: EndpointCreateRequestInit
   ) {
     return this._createRequest<'PUT', TResponseBody>('PUT', path, requestInit)
   }
@@ -94,7 +94,7 @@ export class HttpEndpoints {
    */
   protected static _patch<TResponseBody extends ResponseBody = ResponseBody>(
     path: string,
-    requestInit?: IEndpointCreateRequestInit
+    requestInit?: EndpointCreateRequestInit
   ) {
     return this._createRequest<'PATCH', TResponseBody>(
       'PATCH',
@@ -111,7 +111,7 @@ export class HttpEndpoints {
    */
   protected static _delete<TResponseBody extends ResponseBody = ResponseBody>(
     path: string,
-    requestInit?: IEndpointCreateRequestInit
+    requestInit?: EndpointCreateRequestInit
   ) {
     return this._createRequest<'DELETE', TResponseBody>(
       'DELETE',
@@ -152,7 +152,7 @@ export class HttpEndpoints {
   >(
     method: TMethod,
     path: string,
-    requestInit: IEndpointCreateRequestInit = {}
+    requestInit: EndpointCreateRequestInit = {}
   ): IApiRequestParams<TMethod, TResponseBody> {
     let url = this.buildPath(path)
 

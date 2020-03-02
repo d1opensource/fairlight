@@ -39,7 +39,7 @@
   "rules": {
     "prettier/prettier": 1,
     "@typescript-eslint/explicit-function-return-type": 0,
-    "@typescript-eslint/interface-name-prefix": [1, {"prefixWithI": "always"}],
+    "@typescript-eslint/interface-name-prefix": [1, {"prefixWithI": "never"}],
     "@typescript-eslint/no-empty-interface": 0,
     "@typescript-eslint/no-explicit-any": 0,
     "@typescript-eslint/no-unused-vars": 0,

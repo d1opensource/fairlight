@@ -9,22 +9,22 @@ export type RequestBody = BodyInit | object
 export type ResponseBody = Blob | object | string
 export type ApiResponseType = 'json' | 'text' | 'blob'
 
-interface IApiCommonRequestParams<TMethod extends ApiRequestMethod> {
+interface ApiCommonRequestParams<TMethod extends ApiRequestMethod> {
   url: string
   method: TMethod
   headers?: ApiHeaders
   responseType?: ApiResponseType
 }
 
-export interface IApiGetDeleteRequestParams<
+export interface ApiGetDeleteRequestParams<
   TMethod extends GetDeleteRequestMethod,
   TResponseBody extends ResponseBody = never
-> extends IApiCommonRequestParams<TMethod> {}
+> extends ApiCommonRequestParams<TMethod> {}
 
-export interface IApiMutationRequestParams<
+export interface ApiMutationRequestParams<
   TMethod extends PostPutPatchRequestMethod,
   TResponseBody extends ResponseBody = never
-> extends IApiCommonRequestParams<TMethod> {
+> extends ApiCommonRequestParams<TMethod> {
   body?: RequestBody
 }
 
@@ -32,9 +32,9 @@ export type IApiRequestParams<
   TMethod extends ApiRequestMethod = ApiRequestMethod,
   TResponseBody extends ResponseBody = ResponseBody
 > = TMethod extends GetDeleteRequestMethod
-  ? IApiGetDeleteRequestParams<TMethod, TResponseBody>
+  ? ApiGetDeleteRequestParams<TMethod, TResponseBody>
   : TMethod extends PostPutPatchRequestMethod
-  ? IApiMutationRequestParams<TMethod, TResponseBody>
+  ? ApiMutationRequestParams<TMethod, TResponseBody>
   : never
 
 export type IApiSerializeRequestJson = (body: object) => object
@@ -69,7 +69,7 @@ export type ApiRequestFetchPolicy =
    */
   | 'cache-and-fetch'
 
-export interface IApiRequestOptions {
+export interface ApiRequestOptions {
   /**
    * Specifies how the request interacts with the cache
    */
@@ -85,7 +85,7 @@ export interface IApiRequestOptions {
   forceNewFetch?: boolean
 }
 
-export interface IRequestFetcherParams {
+export interface RequestFetcherParams {
   url: string
   method: ApiRequestMethod
   body?: BodyInit
@@ -93,9 +93,9 @@ export interface IRequestFetcherParams {
   responseType?: ApiResponseType
 }
 
-export interface IRequestFetcher {
+export interface RequestFetcher {
   getResponse(
-    params: IRequestFetcherParams
+    params: RequestFetcherParams
   ): Promise<{
     responseBody: ResponseBody | null
     responseType: ApiResponseType | null

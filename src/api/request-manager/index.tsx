@@ -7,12 +7,12 @@ import {applyHeaders, createSubscription, getParamsId} from '../lib'
 import {ApiRequestFetcher} from '../request-fetcher'
 import {
   ApiRequestMethod,
+  ApiRequestOptions,
   IApiParseResponseJson,
-  IApiRequestOptions,
   IApiRequestParams,
   IApiSerializeRequestJson,
-  IRequestFetcher,
   RequestBody,
+  RequestFetcher,
   ResponseBody
 } from '../typings'
 
@@ -38,7 +38,7 @@ export class ApiRequestManager {
 
   private emitter = new EventEmitter()
 
-  private requestFetcher: IRequestFetcher
+  private requestFetcher: RequestFetcher
 
   private serializeRequestJson: IApiSerializeRequestJson
 
@@ -66,7 +66,7 @@ export class ApiRequestManager {
      * through this transformation function before returning the response
      */
     parseResponseJson?: IApiParseResponseJson
-    requestFetcher?: IRequestFetcher
+    requestFetcher?: RequestFetcher
   }) {
     this.baseUrl = params.baseUrl || ''
     this.requestFetcher = params.requestFetcher || new ApiRequestFetcher()
@@ -84,7 +84,7 @@ export class ApiRequestManager {
    */
   getResponseBody = <TResponseBody extends ResponseBody>(
     params: IApiRequestParams<ApiRequestMethod, TResponseBody>,
-    options: IApiRequestOptions
+    options: ApiRequestOptions
   ): Promise<TResponseBody | null> => {
     if (params.method !== 'GET') {
       // only cache in-progress requests for GET requests
@@ -111,7 +111,7 @@ export class ApiRequestManager {
 
   private async createGetPromise(
     params: IApiRequestParams,
-    options: IApiRequestOptions,
+    options: ApiRequestOptions,
     id: symbol
   ): Promise<ResponseBody | null> {
     const paramsId = getParamsId(params)
@@ -167,7 +167,7 @@ export class ApiRequestManager {
 
   private fetchResponseBody = async (
     params: IApiRequestParams,
-    options: IApiRequestOptions
+    options: ApiRequestOptions
   ): Promise<ResponseBody | null> => {
     const {fetchPolicy = DEFAULT_FETCH_POLICY} = options
     try {

@@ -7,8 +7,8 @@ import {createSubscription, genCacheUpdateEvent, getParamsId} from './lib'
 import {ApiRequestManager} from './request-manager'
 import {
   ApiRequestMethod,
+  ApiRequestOptions,
   IApiParseResponseJson,
-  IApiRequestOptions,
   IApiRequestParams,
   IApiSerializeRequestJson,
   ResponseBody
@@ -55,7 +55,7 @@ export class Api {
    */
   request = <TResponseBody extends ResponseBody>(
     params: IApiRequestParams<ApiRequestMethod, TResponseBody>,
-    options: IApiRequestOptions = {}
+    options: ApiRequestOptions = {}
   ): Promise<TResponseBody> => {
     const {fetchPolicy = DEFAULT_FETCH_POLICY} = options
 

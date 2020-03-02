@@ -1,8 +1,8 @@
 import {ApiError} from '../errors'
 import {
   ApiResponseType,
-  IRequestFetcher,
-  IRequestFetcherParams,
+  RequestFetcher,
+  RequestFetcherParams,
   ResponseBody
 } from '../typings'
 
@@ -13,9 +13,9 @@ import {
  * - Throwing ApiErrors for non-200 level errors
  * - Parsing response bodies
  */
-export class ApiRequestFetcher implements IRequestFetcher {
+export class ApiRequestFetcher implements RequestFetcher {
   getResponse = async (
-    params: IRequestFetcherParams
+    params: RequestFetcherParams
   ): Promise<{
     responseBody: ResponseBody | null
     responseType: ApiResponseType | null
@@ -37,7 +37,7 @@ export class ApiRequestFetcher implements IRequestFetcher {
   /**
    * Generates a `Request` instance to be passed directly to `fetch`
    */
-  private createRequest(params: IRequestFetcherParams): Request {
+  private createRequest(params: RequestFetcherParams): Request {
     return new Request(params.url, {
       method: params.method,
       body: params.body,
@@ -50,7 +50,7 @@ export class ApiRequestFetcher implements IRequestFetcher {
    */
   private async parseResponseBody(
     response: Response,
-    params: IRequestFetcherParams
+    params: RequestFetcherParams
   ): Promise<{
     responseBody: ResponseBody | null
     responseType: ApiResponseType | null

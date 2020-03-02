@@ -1,6 +1,6 @@
 import {ResponseBody} from '../../api/typings'
 
-export interface IUseApiQueryState {
+export interface UseApiQueryState {
   id: symbol | null
   paramsId: string | null
   loading: boolean

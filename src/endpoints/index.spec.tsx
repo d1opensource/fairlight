@@ -1,7 +1,7 @@
 import {
   ApiParam,
+  EndpointCreateRequestInit,
   HttpEndpoints,
-  IEndpointCreateRequestInit,
   RestEndpoints
 } from './'
 
@@ -9,23 +9,23 @@ describe('HttpEndpoints', () => {
   class Endpoints extends HttpEndpoints {
     static basePath = '/base'
 
-    static GET(init: Omit<IEndpointCreateRequestInit, 'body'>) {
+    static GET(init: Omit<EndpointCreateRequestInit, 'body'>) {
       return super._get('/endpoint', init)
     }
 
-    static POST(init: IEndpointCreateRequestInit = {}) {
+    static POST(init: EndpointCreateRequestInit = {}) {
       return super._post('/endpoint', init)
     }
 
-    static PUT(init: IEndpointCreateRequestInit = {}) {
+    static PUT(init: EndpointCreateRequestInit = {}) {
       return super._put('/endpoint', init)
     }
 
-    static PATCH(init: IEndpointCreateRequestInit = {}) {
+    static PATCH(init: EndpointCreateRequestInit = {}) {
       return super._patch('/endpoint', init)
     }
 
-    static DELETE(init: IEndpointCreateRequestInit = {}) {
+    static DELETE(init: EndpointCreateRequestInit = {}) {
       return super._delete('/endpoint', init)
     }
   }
@@ -98,7 +98,7 @@ describe('HttpEndpoints', () => {
 })
 
 describe('RestEndpoints', () => {
-  interface IModel {
+  interface Model {
     name: string
   }
 
@@ -109,7 +109,7 @@ describe('RestEndpoints', () => {
       return super._list(query)
     }
 
-    static create(body: IModel) {
+    static create(body: Model) {
       return super._create(body)
     }
 
@@ -117,11 +117,11 @@ describe('RestEndpoints', () => {
       return super._findById(id)
     }
 
-    static update(id: ApiParam, body: Partial<IModel>) {
+    static update(id: ApiParam, body: Partial<Model>) {
       return super._update(id, body)
     }
 
-    static partialUpdate(id: ApiParam, body: Partial<IModel>) {
+    static partialUpdate(id: ApiParam, body: Partial<Model>) {
       return super._partialUpdate(id, body)
     }
 

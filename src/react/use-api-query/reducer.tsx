@@ -1,7 +1,7 @@
 import {ActionType, getType, Reducer} from 'typesafe-actions'
 
 import {useApiQueryActions} from './actions'
-import {IUseApiQueryState} from './typings'
+import {UseApiQueryState} from './typings'
 
 const INITIAL_STATE = {
   id: null,
@@ -12,7 +12,7 @@ const INITIAL_STATE = {
 }
 
 export const useApiQueryReducer: Reducer<
-  IUseApiQueryState,
+  UseApiQueryState,
   ActionType<typeof useApiQueryActions>
 > = (prev = INITIAL_STATE, action) => {
   switch (action.type) {
@@ -77,7 +77,7 @@ export const useApiQueryReducer: Reducer<
  * Ensures that the completed request was the last one that was called
  */
 function isLiveRequest(
-  prev: IUseApiQueryState,
+  prev: UseApiQueryState,
   action: {payload: {id: symbol; paramsId: string}}
 ) {
   return (

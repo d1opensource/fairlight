@@ -6,7 +6,7 @@ export * from './react/context'
 export {
   ApiParam,
   ApiQueryParams,
-  IEndpointCreateRequestInit,
+  EndpointCreateRequestInit as IEndpointCreateRequestInit,
   HttpEndpoints,
   RestEndpoints,
   dynamicPath

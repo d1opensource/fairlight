@@ -12,13 +12,13 @@ import {useApi} from '../use-api'
 import {useApiQueryActions} from './actions'
 import {useApiQueryReducer} from './reducer'
 
-interface IUseApiQueryData<TResponseBody extends ResponseBody> {
+interface UseApiQueryData<TResponseBody extends ResponseBody> {
   data: TResponseBody | undefined | null
   loading: boolean
   error: Error | null
 }
 
-export interface IUseApiQueryActions<TResponseBody extends ResponseBody> {
+export interface UseApiQueryActions<TResponseBody extends ResponseBody> {
   /**
    * Sets the response data of the Api request manually.
    *
@@ -76,7 +76,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
      */
     dontReinitialize?: boolean
   } = {}
-): [IUseApiQueryData<TResponseBody>, IUseApiQueryActions<TResponseBody>] {
+): [UseApiQueryData<TResponseBody>, UseApiQueryActions<TResponseBody>] {
   const api = useApi()
   const fetchPolicy = opts.fetchPolicy || api.defaultFetchPolicy
   const paramsId = params && getParamsId(params)
