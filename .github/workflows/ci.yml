@@ -26,6 +26,7 @@ jobs:
         with:
           node-version: 12
           registry-url: https://registry.npmjs.org/
+      - run: npm install
       - run: npm run build
   report_coverage:
     needs: [ test ]
@@ -35,6 +36,7 @@ jobs:
     - uses: actions/setup-node@master
       with:
         node-version: '12'
+    - run: npm install
     - uses: paambaati/codeclimate-action@v2.2.4
       env:
         CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
