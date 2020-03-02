@@ -19,6 +19,8 @@ Energize your REST API 🌿 with React hooks and a centralized cache.
 1. [Basic Usage](#basic-usage)
 1. [Installation & Setup](#installation--setup)
 1. [Guide](#guide) _(wip)_
+1. [Comparison to similar libraries](#comparison-to-similar-libraries) _(wip)_
+1. [Usage with Redux](#comparison-to-other-libraries) _(wip)_
 1. [API](#api) _(wip)_
 
 ## Motivation
