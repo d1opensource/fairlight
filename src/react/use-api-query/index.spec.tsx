@@ -5,7 +5,7 @@ import {act, renderHook} from '@testing-library/react-hooks'
 
 import {Api} from '../../api'
 import {ApiError} from '../../api/errors'
-import {ApiRequestFetchPolicy, IApiRequestParams} from '../../api/typings'
+import {ApiRequestFetchPolicy, ApiRequestParams} from '../../api/typings'
 import {ApiProvider} from '../context'
 import {useApiQuery} from './'
 
@@ -160,7 +160,7 @@ it('can disable reinitialization of data between successive requests', async () 
 
 describe('cache', () => {
   it('defaults fetchPolicy to cache-and-fetch', async () => {
-    const params: IApiRequestParams = {method: 'GET', url: '/endpoint'}
+    const params: ApiRequestParams = {method: 'GET', url: '/endpoint'}
     const {waitForNextUpdate} = renderHook(() => useApiQuery(params), {
       wrapper
     })
@@ -174,7 +174,7 @@ describe('cache', () => {
   })
 
   it('uses defaultFetchPolicy from context', async () => {
-    const params: IApiRequestParams = {method: 'GET', url: '/endpoint'}
+    const params: ApiRequestParams = {method: 'GET', url: '/endpoint'}
     const defaultFetchPolicy = 'no-cache'
     const {waitForNextUpdate} = renderHook(() => useApiQuery(params), {
       wrapper: function Wrapper({children}) {
@@ -195,7 +195,7 @@ describe('cache', () => {
   })
 
   it('initializes the data to null if there is no cached value for a cache-first policy', async () => {
-    const params: IApiRequestParams = {method: 'GET', url: '/endpoint'}
+    const params: ApiRequestParams = {method: 'GET', url: '/endpoint'}
     const response = {name: 'Test'}
     const cacheFirstPolicies: ApiRequestFetchPolicy[] = [
       'cache-first',
@@ -236,7 +236,7 @@ describe('cache', () => {
   })
 
   it('initializes data to the cached value if its a cache-first policy', async () => {
-    const params: IApiRequestParams = {method: 'GET', url: '/endpoint'}
+    const params: ApiRequestParams = {method: 'GET', url: '/endpoint'}
     const response = {name: 'Test'}
     const cacheFirstPolicies: ApiRequestFetchPolicy[] = [
       'cache-first',
@@ -277,7 +277,7 @@ describe('cache', () => {
   })
 
   it('does not initialize to the cached value if its a fetch-first policy', async () => {
-    const params: IApiRequestParams = {method: 'GET', url: '/endpoint'}
+    const params: ApiRequestParams = {method: 'GET', url: '/endpoint'}
     const response = {name: 'Test'}
     const fetchFirstPolicies: ApiRequestFetchPolicy[] = [
       'no-cache',
@@ -310,7 +310,7 @@ describe('cache', () => {
   })
 
   it('updates data on to api cache updates', async () => {
-    const params: IApiRequestParams = {method: 'GET', url: '/endpoint'}
+    const params: ApiRequestParams = {method: 'GET', url: '/endpoint'}
     const response = {name: 'Test'}
 
     const fetchPolicies: ApiRequestFetchPolicy[] = [
@@ -372,7 +372,7 @@ describe('cache', () => {
 
 describe('refetch', () => {
   it('refetches data', async () => {
-    const params: IApiRequestParams = {method: 'GET', url: '/endpoint'}
+    const params: ApiRequestParams = {method: 'GET', url: '/endpoint'}
     const fetchPolicies: ApiRequestFetchPolicy[] = [
       null,
       'cache-first',
@@ -431,7 +431,7 @@ describe('refetch', () => {
   })
 
   it('can override deduplicate', async () => {
-    const params: IApiRequestParams = {method: 'GET', url: '/endpoint'}
+    const params: ApiRequestParams = {method: 'GET', url: '/endpoint'}
 
     const response1 = {name: 'Test'}
     ;(api.request as jest.Mock).mockResolvedValue(response1)
@@ -571,7 +571,7 @@ describe('setData', () => {
   })
 
   it('writes to the cache if fetchPolicy is not no-cache', async () => {
-    const params: IApiRequestParams = {method: 'GET', url: '/endpoint'}
+    const params: ApiRequestParams = {method: 'GET', url: '/endpoint'}
     const response = {name: 'Test'}
     ;(api.request as jest.Mock).mockResolvedValue(response)
     const fetchPolicies: ApiRequestFetchPolicy[] = [

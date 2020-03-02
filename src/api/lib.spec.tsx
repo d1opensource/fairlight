@@ -1,9 +1,9 @@
 import {applyHeaders, getParamsId} from './lib'
-import {IApiRequestParams} from './typings'
+import {ApiRequestParams} from './typings'
 
 describe('getParamsId', () => {
   it('serializes basic requests', () => {
-    const requestParams: IApiRequestParams = {
+    const requestParams: ApiRequestParams = {
       method: 'GET',
       url: '/endpoint'
     }
@@ -30,7 +30,7 @@ describe('getParamsId', () => {
   })
 
   it('serializes headers', () => {
-    const requestParams: IApiRequestParams = {
+    const requestParams: ApiRequestParams = {
       method: 'GET',
       url: '/endpoint'
     }
@@ -98,7 +98,7 @@ describe('getParamsId', () => {
   })
 
   it('serializes response type', () => {
-    const requestParams: IApiRequestParams = {
+    const requestParams: ApiRequestParams = {
       method: 'GET',
       url: '/endpoint',
       responseType: null
@@ -137,7 +137,7 @@ describe('getParamsId', () => {
   })
 
   it('serializes an extra key', () => {
-    const requestParams: IApiRequestParams = {
+    const requestParams: ApiRequestParams = {
       method: 'GET',
       url: '/endpoint'
     }

@@ -1,4 +1,4 @@
-import {IApiRequestParams, RequestFetcher} from '../typings'
+import {ApiRequestParams, RequestFetcher} from '../typings'
 import {ApiRequestManager} from './'
 
 const requestFetcher: RequestFetcher = {
@@ -20,7 +20,7 @@ it('does not cache the response if not the most recent request for the params', 
   })
   ;(requestFetcher.getResponse as jest.Mock).mockReturnValueOnce(request2)
 
-  const params: IApiRequestParams = {method: 'GET', url: '/endpoint'}
+  const params: ApiRequestParams = {method: 'GET', url: '/endpoint'}
   const getResponseBody1 = requestManager.getResponseBody(params, {
     deduplicate: false
   })

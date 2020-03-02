@@ -2,7 +2,7 @@ import 'jest-fetch-mock'
 
 import {Api} from './'
 import {ApiCacheMissError, ApiError} from './errors'
-import {ApiRequestMethod, IApiRequestParams} from './typings'
+import {ApiRequestMethod, ApiRequestParams} from './typings'
 
 const BASE_URL = 'http://test.com'
 let api: Api
@@ -188,7 +188,7 @@ describe('fetch policies', () => {
       headers: {'content-type': 'application/json'}
     })
 
-    const params: IApiRequestParams<'GET', {}> = {
+    const params: ApiRequestParams<'GET', {}> = {
       method: 'GET',
       url: '/endpoint'
     }
@@ -253,7 +253,7 @@ describe('fetch policies', () => {
       headers: {'content-type': 'application/json'}
     })
 
-    const params: IApiRequestParams<'GET', {}> = {
+    const params: ApiRequestParams<'GET', {}> = {
       method: 'GET',
       url: '/endpoint'
     }
@@ -290,7 +290,7 @@ describe('deduplication', () => {
       headers: {'content-type': 'application/json'}
     })
 
-    const params: IApiRequestParams<'GET', {}> = {
+    const params: ApiRequestParams<'GET', {}> = {
       method: 'GET',
       url: '/endpoint'
     }
@@ -309,7 +309,7 @@ describe('deduplication', () => {
       headers: {'content-type': 'application/json'}
     })
 
-    const params: IApiRequestParams<'GET', {}> = {
+    const params: ApiRequestParams<'GET', {}> = {
       method: 'GET',
       url: '/endpoint'
     }
@@ -330,7 +330,7 @@ describe('deduplication', () => {
       headers: {'content-type': 'application/json'}
     })
 
-    const params: IApiRequestParams<'GET', {}> = {
+    const params: ApiRequestParams<'GET', {}> = {
       method: 'GET',
       url: '/endpoint'
     }
@@ -349,7 +349,7 @@ describe('deduplication', () => {
       headers: {'content-type': 'application/json'}
     })
 
-    const params: IApiRequestParams<'GET', {}> = {
+    const params: ApiRequestParams<'GET', {}> = {
       method: 'GET',
       url: '/endpoint'
     }
@@ -369,7 +369,7 @@ describe('deduplication', () => {
         headers: {'content-type': 'application/json'}
       })
 
-      const params: IApiRequestParams = {
+      const params: ApiRequestParams = {
         method: 'GET',
         url: '/endpoint'
       }
@@ -385,7 +385,7 @@ describe('deduplication', () => {
         headers: {'content-type': 'application/json'}
       })
 
-      const params: IApiRequestParams = {
+      const params: ApiRequestParams = {
         method: 'GET',
         url: '/endpoint'
       }
@@ -410,7 +410,7 @@ describe('deduplication', () => {
           headers: {'content-type': 'application/json'}
         })
 
-        const params: IApiRequestParams = {
+        const params: ApiRequestParams = {
           method,
           url: '/endpoint'
         }
@@ -429,7 +429,7 @@ describe('deduplication', () => {
           headers: {'content-type': 'application/json'}
         })
 
-        const params: IApiRequestParams = {
+        const params: ApiRequestParams = {
           method,
           url: '/endpoint'
         }
@@ -446,7 +446,7 @@ describe('deduplication', () => {
 })
 
 test('manual cache read/write and listener', async () => {
-  const params: IApiRequestParams<'GET', {}> = {
+  const params: ApiRequestParams<'GET', {}> = {
     method: 'GET',
     url: '/endpoint'
   }
