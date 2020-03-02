@@ -2,7 +2,7 @@
 
 Energize your REST API 🌿 with React hooks and a centralized cache.
 
-![npm bundle size](https://img.shields.io/bundlephobia/minzip/restii) ![npm type definitions](https://img.shields.io/npm/types/restii) ![GitHub stars](https://img.shields.io/github/stars/d1g1tinc/restii?style=social)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/d1g1tinc/restii/build) ![Code Climate coverage](https://img.shields.io/codeclimate/coverage/d1g1tinc/restii) ![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability/d1g1tinc/restii) ![npm bundle size](https://img.shields.io/bundlephobia/minzip/restii) ![npm type definitions](https://img.shields.io/npm/types/restii) ![GitHub stars](https://img.shields.io/github/stars/d1g1tinc/restii?style=social)
 
 ## Features
 
