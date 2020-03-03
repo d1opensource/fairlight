@@ -22,18 +22,19 @@ Energize your REST API 🌿 with React hooks and a centralized cache.
   - [Response Cache](#response-cache)
     - [Interacting with the cache when requesting data](#interacting-with-the-cache-when-requesting-data)
     - [Using the cache directly](#using-the-cache-directly)
-  - [Dependent queries](#dependent-queries)
+    - [How request cache keys are determined](#how-request-cache-keys-are-determined)
   - [Re-fetching a query](#re-fetching-a-query)
+  - [Dependent queries](#dependent-queries)
   - [Custom response body parsing](#custom-response-body-parsing)
   - [Custom query string serialization](#custom-query-string-serialization)
   - [Setting default headers (ie. an auth token) for all requests](#setting-default-headers-ie-an-auth-token-for-all-requests)
   - [Error handling](#error-handling)
   - [Typescript](#typescript)
-- [Usage with Redux](#usage-with-redux)
+  - [Usage with Redux](#usage-with-redux)
 - [Comparison to similar libraries](#comparison-to-similar-libraries)
 - [API Documentation](#api-documentation)
   - [`useApiQuery(params: object, opts?: object)`](#useapiqueryparams-object-opts-object)
-  - [`<ApiProvider />`](#apiprovider)
+  - [`ApiProvider`](#apiprovider)
   - [`HttpEndpoints`](#httpendpoints)
   - [`RestEndpoints`](#restendpoints)
   - [`Api`](#api)
@@ -89,44 +90,15 @@ export class UserEndpoints extends HttpEndpoints {
 
   static list(query) {
     return super._get('', {query})
-    // {method: 'GET', url: '/users?serializedQuery'}
   }
 
   static create(body) {
     return super._post('', {body})
-    // {method: 'POST', url: '/users'}
-  }
-
-  static findById(id) {
-    return super._get(`/${id}`)
-    // {method: 'GET', url: `/users/${id}`}
-  }
-
-  static update(id, body) {
-    return super._put(`/${id}`, {body})
-    // {method: 'PUT', url: `/users/${id}`, body}
-  }
-
-  static partialUpdate(id, body) {
-    return super._patch(`/${id}`, {body})
-    // {method: 'PATCH', url: `/users/${id}`, body}
-  }
-
-  static destroy(id) {
-    return super._delete(`/${id}`)
-    // {method: 'DELETE', url: `/users/${id}`}
-  }
-
-  // ad-hoc, custom request:
-  static requestPasswordReset(id, resetToken, body) {
-    return super._post(`/users/${id}`, {
-      body,
-      headers: {'x-reset-token': resetToken}
-    })
-    // {method: 'POST', url: `/users/${id}`, headers: {'x-reset-token': resetToken}, body}
   }
 }
 ```
+
+_(All `HttpEndpoints` methods are documented [here](#httpendpoints))_
 
 If your endpoints follow common REST-ful conventions, you can subclass `restii#RestEndpoints` (which subclasses `restii#HttpEndpoints`) to reduce REST boilerplate:
 
@@ -159,15 +131,10 @@ export class UserEndpoints extends RestEndpoints {
   static destroy(id) {
     return super._destroy(id)
   }
-
-  static requestPasswordReset(id, resetToken, body) {
-    return super._post(`/users/${id}`, {
-      body,
-      headers: {'x-reset-token': resetToken}
-    })
-  }
 }
 ```
+
+_(All `RestEndpoints` methods are documented [here](#restendpoints))_
 
 Then you can use these endpoints to make queries:
 
@@ -254,43 +221,340 @@ You can now start defining endpoints and making requests in your app.
 
 #### Interacting with the cache when requesting data
 
-TODO explain how to use `fetchPolicy`
+The caching functionality of `useApiQuery` is determined by its `fetchPolicy`. By default, this is set to `cache-and-fetch`: the first time you use `useApiQuery` for a given request, it will fetch the data and save it. The next time `useApiQuery` is used for that same request, the hook will return the cached response `data` and make a request for a fresh version, allowing the UI to display a value quickly to the user. This pattern is called [`stale-while-invalidate`](https://web.dev/stale-while-revalidate/).
+
+This fetch policy can be overridden on a per-request:
+
+```jsx
+const [users] = useApiQuery(UserEndpoints.list(), {
+  fetchPolicy: 'no-cache' // disables the cache altogether
+})
+```
+
+Here are the possible fetch policies:
+
+| Field             | Description                                                                                                                                                                                                                                                                                                                                                                                      |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `no-cache`        | Only fetch from the server and never read from or write to the cache.                                                                                                                                                                                                                                                                                                                            |
+| `cache-first`     | The request will first attempt to read from the cache.<br />If the data is cached, return the data and do not fetch.<br /> If the data isn't cached, make a fetch and then update the cache.                                                                                                                                                                                                     |
+| `fetch-first`     | The request will fetch from the server, and then write the response to the cache.                                                                                                                                                                                                                                                                                                                |
+| `cache-only`      | The request will _only_ read from the cache and never fetch from the server.<br />If the data does not exist, it will throw an `ApiCacheMissError`                                                                                                                                                                                                                                               |
+| `cache-and-fetch` | The request will simultaneously read from the cache and fetch from the server.<br />If the data is in the cache, the promise will resolve with the cached results. Once the fetch resolves, it will update the cache and emit an event to notify listeners of the update.<br />If the data is not in the cache, the promise will resolve with the result of the fetch and then update the cache. |
+
+If you'd like to override the default `fetchPolicy` for `useApiQuery`, you can pass a `defaultFetchPolicy` prop to `<ApiProvider />`:
+
+```jsx
+const App = () => (
+  <ApiProvider api={api} defaultFetchPolicy='fetch-first'>
+    {/* Render app */}
+  </ApiProvider>
+)
+```
+
+Similarly, you can pass a `fetchPolicy` when calling `api.request` directly:
+
+```jsx
+const users = await api.request(UserEndpoints.list(), {
+  fetchPolicy: 'cache-only'
+})
+```
+
+`api.request` has a default `fetchPolicy` of `fetch-first`, but can be overridden in the `Api` constructor:
+
+```jsx
+const api = new Api({defaultFetchPolicy: 'no-cache'})
+```
 
 #### Using the cache directly
 
-TODO
+It can be useful to read and write directly to and from the cache. For this, you can use `Api#readCachedResponse` and `Api#writeCachedResponse`. View the [API examples](#writecachedresponseparams-object-responsebody-blob--object--string) for usage.
 
-### Dependent queries
+#### How request cache keys are determined
 
-TODO
+Requests are keyed by a deterministic hash of its params. These properties include: `url`, `method`, `headers`, `responseType`, and `extrakEy`.
+
+Note that the `body` is _not_ included in the cache key, so equivalent `POST` requests with different `body` would have the same cache key. In these instances, if you would like to utilize the cache, you can set an `extraKey` for that request. See the documentation for [`api.request`](#requestparams-object-opts-object) for more details.
 
 ### Re-fetching a query
 
-TODO
+Sometimes, it may be desirable to fetch a new query. This can be done using the `refetch()` action returned by the hook:
+
+Example:
+
+```jsx
+const [users, usersQueryActions] = useApiQuery(UserEndpoints.list())
+
+return (
+  <button
+    type='button'
+    onClick={() => {
+      usersQueryActions.refresh()
+    }}
+  >
+    Refresh Users
+  </button>
+)
+```
+
+- If `deduplicate` is `true` for the query and there is currently a request in flight, it will not make an additional request. You can force a new fetch by passing a `deduplicate` option: `refresh({ deduplicate: false })`.
+- If you want to reinitialize `data` to `null` when you call `refresh`, you can do so by passing a `reinitialize` option: `refresh({ reinitialize: true })`
+
+Full documentation is available [here](#useapiqueryparams-object-opts-object).
+
+### Dependent queries
+
+If one query depends on data that isn't yet available, or on the results of another query, you can pass a falsy value to `useApiQuery`. `query.data` will be `null` and `query.loading` will be `false`.
+
+Example:
+
+```jsx
+const [users] = useApiQuery(UserEndpoints.list({email: props.userEmail}))
+const [friends, friendsQueryActions] = useApiQuery(
+  users.data &&
+    users.data.length > 0 &&
+    UserProfileEndpoints.list(users.data[0].id)
+)
+
+// friends.data === null
+// friends.loading === false
+
+// note that `refetch` will be a NOOP at this time:
+friendsQueryActions.refetch()
+```
 
 ### Custom response body parsing
 
-TODO
+By default, responses will attempt to be parsed to `'json'`, `'text'`, or `'blob'` formats using the `Content-Type` header on the response:
+
+| Pattern                           | Parsed Value |
+| --------------------------------- | ------------ |
+| `'application/json'`              | `'json'`     |
+| `'text/*'`                        | `'text'`     |
+| `'(application\|image\|video)/*'` | `'blob'`     |
+
+However, you can manually specify the parse type by passing `responseType: 'json' | 'text' | 'blob'` to your request:
+
+```jsx
+class TransactionEndpoints extends HttpEndpoints {
+  static basePath = '/transactions'
+
+  static csvExport() {
+    return super._get('/export.csv', {
+      responseType: 'text'
+    })
+  }
+}
+
+const csv = await api.request(TransactionEndpoints.csvExport)
+
+// typeof csv === 'string'
+```
 
 ### Custom query string serialization
 
-TODO
+If you want to provide your own query string serialization, you can override `HttpEndpoints#_serializeQuery`.
+
+Note that it may be useful to apply this logic to _all_ of your endpoints by creating a `BaseEndpoints` class and extending from that:
+
+```jsx
+import {qs} from 'qs'
+
+class BaseEndpoints extends HttpEndpoints {
+  static _serializeQuery(query) {
+    return qs.stringify(query)
+  }
+}
+
+class UserEndpoints extends BaseEndpoints {
+  static basePath = '/users'
+
+  static list(query) {
+    return super._get('/', {query}) // will use `qs.stringify`
+  }
+}
+```
 
 ### Setting default headers (ie. an auth token) for all requests
 
-TODO
+A common use case is to pass an authentication token to requests after a user has logged in. This can be achieved using default headers:
+
+```jsx
+api.setDefaultHeader('X-Auth-Token', token)
+```
+
+Now, all of your queries will pass this additional header to requests.
 
 ### Error handling
 
-TODO
+Api requests can return two types of errors:
+
+**ApiError**
+
+If a request returns a non-200 status code, an `ApiError` is thrown. You can catch these errors and perform additional handling:
+
+```jsx
+import {ApiError} from 'restii'
+
+try {
+  await api.request(UserEndpoints.create({name: 'ExistingUser'}))
+} catch (err) {
+  if (
+    error instanceof ApiError &&
+    error.status === 400 &&
+    error.responseBody?.code === '4120'
+  ) {
+    // handle error
+    return
+  }
+
+  // bubble unexpected error up
+  throw error
+}
+```
+
+**ApiCacheMissError**
+
+When making an Api request with `fetchPolicy: 'cache-only'`, and a cache value does not exist, an `ApiCacheMissError` will be thrown. While you _could_ handle this error by re-fetching over the network, you could simply just use `fetchPolicy: 'cache-and-fetch'` instead.
 
 ### Typescript
 
-TODO
+The library was internally written in Typescript and supports strong request/response typings.
 
-## Usage with Redux
+Example:
 
-TODO
+```tsx
+interface IUser {
+  id: number
+  firstName: string
+  lastName: string
+}
+
+class UserEndpoints extends RestEndpoints {
+  list(query?: {limit?: number; page?: number}) {
+    return super._list<IUser[]>(query)
+  }
+
+  create(body?: Omit<IUser, 'id'>) {
+    return super._create<IUser>(body)
+  }
+}
+
+const users = await api.request(
+  UserEndpoints.list({
+    limit: 5,
+    page: 2
+  })
+)
+
+// `users` has type `IUser[]`
+
+const user = await api.request(
+  UserEndpoints.create({
+    firstName: 'Jane',
+    lastName: 'Doe'
+  })
+)
+
+// `user` has type `IUser`
+```
+
+### Usage with Redux
+
+While it is recommended to use the `useApiQuery` hook to make requests in your components, it's possible to make `Api` calls in your Redux middleware (ie. sagas, thunks):
+
+**Usage with `redux-thunk`**:
+
+When you instantiate your redux store, you can pass your `Api` client instance as an [extra argument](https://github.com/reduxjs/redux-thunk#injecting-a-custom-argument) to your thunk middleware:
+
+```jsx
+import {createStore, applyMiddleware} from 'redux'
+import {Provider} from 'react-redux'
+import thunk from 'redux-thunk'
+import {Api} from 'restii'
+
+const api = new Api()
+
+const store = createStore(
+  reducer,
+  applyMiddleware(thunk.withExtraArgument({api}))
+)
+
+const App = () => (
+  <Provider store={store}>
+    <ApiProvider api={api}>{/* Render your app here */}</ApiProvider>
+  </Provider>
+)
+```
+
+Then you can make API calls in your thunks:
+
+```jsx
+const loadUsers = () => async (dispatch, getState, {api}) => {
+  dispatch(userActions.request())
+  try {
+    const user = await api.request(UserEndpoints.list())
+    dispatch(userActions.success(user))
+  } catch (error) {
+    dispatch(userActions.failure(error))
+  }
+}
+```
+
+**Usage with `redux-saga`**:
+
+When you instantiate your saga middleware, you can pass your `Api` client instance to your sagas via [saga context](https://redux-saga.js.org/docs/api/).
+
+The following example is likely be broken down into separate files, but is included in one example for simplicity:
+
+```jsx
+import {createStore, applyMiddleware} from 'redux'
+import createSagaMiddleware from 'redux-saga'
+import {Provider} from 'react-redux'
+import {Api} from 'restii'
+
+// define root saga
+function* rootSaga(api) {
+  // set `api` in the saga context
+  yield setContext('api', api)
+}
+
+// create store with saga middleware
+function createStore(api) {
+  const sagaMiddleware = createSagaMiddleware()
+  const store = createStore(reducer, applyMiddleware(sagaMiddleware))
+
+  // pass api to root saga
+  sagaMiddleware.run(rootSaga, api)
+  return store
+}
+
+sagaMiddleware.run(rootSaga)
+
+// create api and pass to `createStore`:
+const api = new Api()
+const store = createStore(api)
+
+const App = () => (
+  <Provider store={store}>
+    <ApiProvider api={api}>{/* Render your app here */}</ApiProvider>
+  </Provider>
+)
+```
+
+Then you can make API calls in your sagas:
+
+```jsx
+function* loadUsers() {
+  const api = yield getContext('api')
+  yield put(userActions.request())
+  try {
+    const user = yield call(api.request, UserEndpoints.list())
+    yield put(userActions.success(user))
+  } catch (error) {
+    yield put(userActions.failure(error))
+  }
+}
+```
 
 ## Comparison to similar libraries
 
@@ -300,9 +564,9 @@ TODO: add comparisons to `react-query`/`swr`, `rest-hooks`, `apollo-graphql` (wi
 
 ### `useApiQuery(params: object, opts?: object)`
 
-Example:
+<details><summary>Example</summary>
 
-```tsx
+```jsx
 import {useApiQuery} from 'restii'
 
 const [user, userQueryActions] = useApiQuery(UserEndpoints.list(), {
@@ -318,6 +582,8 @@ userQueryActions.refetch()
 // to imperatively set the data:
 userQueryActions.setData({id: 1, name: 'Jane'})
 ```
+
+</details>
 
 <details><summary>Details</summary>
 
@@ -352,13 +618,13 @@ Returns `[queryData, queryActions]`:
 
 </details>
 
-### `<ApiProvider />`
+### `ApiProvider`
 
 Provides an `Api` instance to a React app.
 
-Example:
+<details><summary>Example</summary>
 
-```tsx
+```jsx
 import {ApiProvider} from 'restii'
 
 const api = new Api({baseUrl: 'http://your-api.com/api'})
@@ -369,6 +635,8 @@ const App = () => (
   </ApiProvider>
 )
 ```
+
+</details>
 
 <details><summary>Details</summary>
 
@@ -385,9 +653,9 @@ const App = () => (
 
 This class should be extended to provide your own endpoints for a given `basePath`.
 
-Example:
+<details><summary>Example</summary>
 
-```tsx
+```jsx
 class UserEndpoints extends HttpEndpoints {
   static basePath = '/users'
 
@@ -431,6 +699,8 @@ class UserEndpoints extends HttpEndpoints {
   }
 }
 ```
+
+</details>
 
 <details><summary>Details</summary>
 
@@ -463,9 +733,9 @@ This class should be extended to provide your own endpoints for a given `basePat
 
 `RestEndpoints` extends `HttpEndpoints` and inherits all of its functionality.
 
-Example:
+<details><summary>Example</summary>
 
-```tsx
+```jsx
 class UserEndpoints extends HttpEndpoints {
   static basePath = '/users'
 
@@ -510,6 +780,8 @@ class UserEndpoints extends HttpEndpoints {
 }
 ```
 
+</details>
+
 <details><summary>Details</summary>
 
 In addition to the methods inherited from [`HttpEndpoints`](#httpendpoints), `RestEndpoints` has the following static protected methods:
@@ -518,10 +790,10 @@ In addition to the methods inherited from [`HttpEndpoints`](#httpendpoints), `Re
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | `static _list?: (query?: { [key: string]: string \| number \| boolean })`                                                                                     | `GET /?search` request. You can optionally pass query parameters to filter the results.                       |
 | `static _create?: (body?: object \| string \| Blob \| BufferSource \| FormData \| URLSearchParams \| ReadableStream<Uint8Array>)`                             | `POST /` request. You can pass the request `body` as the first argument.                                      |
-| `static _findById?: (id: string | number`                                                                                                                     | `GET /:id` request. The resource `id` is the first argument.                                                  |
-| `static _update?: (id: string | number, body?: object \| string \| Blob \| BufferSource \| FormData \| URLSearchParams \| ReadableStream<Uint8Array>)`        | `PUT /:id` request. The resource `id` is the first argument, and the request `body` is the second argument.   |
+| `static _findById?: (id: string \| number)`                                                                                                                   | `GET /:id` request. The resource `id` is the first argument.                                                  |
+| `static _update?: (id: string \| number, body?: object \| string \| Blob \| BufferSource \| FormData \| URLSearchParams \| ReadableStream<Uint8Array>)`       | `PUT /:id` request. The resource `id` is the first argument, and the request `body` is the second argument.   |
 | `static _partialUpdate?: (id: string | number, body?: object \| string \| Blob \| BufferSource \| FormData \| URLSearchParams \| ReadableStream<Uint8Array>)` | `PATCH /:id` request. The resource `id` is the first argument, and the request `body` is the second argument. |
-| `static _destroy?: (id: string | number, body?: object \| string \| Blob \| BufferSource \| FormData \| URLSearchParams \| ReadableStream<Uint8Array>)`       | `DELETE /:id` request. The resource `id` is the first argument.                                               |
+| `static _destroy?: (id: string \| number, body?: object \| string \| Blob \| BufferSource \| FormData \| URLSearchParams \| ReadableStream<Uint8Array>)`      | `DELETE /:id` request. The resource `id` is the first argument.                                               |
 
 </details>
 
@@ -529,9 +801,9 @@ In addition to the methods inherited from [`HttpEndpoints`](#httpendpoints), `Re
 
 #### `Constructor`
 
-Example:
+<details><summary>Example</summary>
 
-```tsx
+```jsx
 import {Api} from 'restii'
 
 const api = new Api({
@@ -541,6 +813,8 @@ const api = new Api({
   serializeRequestJson: (body) => snakify(body)
 })
 ```
+
+</details>
 
 <details><summary>Details</summary>
 
@@ -559,9 +833,9 @@ Constructor fields:
 
 Makes an API request and returns the parsed response body.
 
-Example:
+<details><summary>Example</summary>
 
-```tsx
+```jsx
 // Recommended usage with endpoints:
 const user = await api.request(UserEndpoints.list(), {
   fetchPolicy: 'no-cache',
@@ -584,6 +858,8 @@ const user = await api.request({
   deduplicate: true
 })
 ```
+
+</details>
 
 <details><summary>Details</summary>
 
@@ -615,11 +891,13 @@ The response body.
 
 If `true`, indicates that an equivalent matching request is currently in progress.
 
-Example:
+<details><summary>Example</summary>
 
-```tsx
+```jsx
 const user = await api.requestInProgress(UserEndpoints.list())
 ```
+
+</details>
 
 <details><summary>Details</summary>
 
@@ -637,14 +915,16 @@ Returns:
 
 Sets the cached response body for a given set of request params.
 
-Example:
+<details><summary>Example</summary>
 
-```tsx
+```jsx
 const user = await api.writeCachedResponse(UserEndpoints.list(), [
   {id: 1, name: 'Jane'},
   {id: 2, name: 'Joe'}
 ])
 ```
+
+</details>
 
 <details><summary>Details</summary>
 
@@ -666,11 +946,13 @@ The main reason you would use this over `Api#request` with a cached fetch policy
 
 Note that if there is a cache miss, it will return `undefined`.
 
-Example:
+<details><summary>Example</summary>
 
-```tsx
+```jsx
 const user = api.readCachedResponse(UserEndpoints.findById(3))
 ```
+
+</details>
 
 <details><summary>Details</summary>
 
@@ -688,9 +970,9 @@ The cached response body, or `undefined` on cache miss.
 
 Subscribes to cache updates for a given param's response.
 
-Example:
+<details><summary>Example</summary>
 
-```tsx
+```jsx
 const unsubscribe = api.onCacheUpdate(UserEndpoints.list(), (users) => {
   // handle updated `users` in cache
 })
@@ -698,6 +980,8 @@ const unsubscribe = api.onCacheUpdate(UserEndpoints.list(), (users) => {
 // invoke returned function to unsubscribe:
 unsubscribe()
 ```
+
+</details>
 
 <details><summary>Details</summary>
 
@@ -719,19 +1003,21 @@ A function that, when called, unsubscribes the listener.
 
 Sets a default header that is passed to all requests.
 
-Example:
+<details><summary>Example</summary>
 
-```tsx
+```jsx
 api.setDefaultHeader('X-Auth-Token', '123456')
 ```
 
+</details>
+
 #### `onError(listener: Function)`
 
-Subscribes to Api errors. This would be useful for error reporting or to handle an invalid auth token by logging out.
+Subscribes to Api errors. This is useful for error reporting or to handle an invalid auth token by logging out.
 
-Example:
+<details><summary>Example</summary>
 
-```tsx
+```jsx
 import {ApiError} from 'restii'
 
 api.onError((error) => {
@@ -741,6 +1027,8 @@ api.onError((error) => {
 // invoke returned function to unsubscribe:
 unsubscribe()
 ```
+
+</details>
 
 <details><summary>Details</summary>
 

@@ -12,6 +12,8 @@ import {ApiContext} from '../context'
 import {useApiQueryActions} from './actions'
 import {useApiQueryReducer} from './reducer'
 
+type FalsyValue = '' | 0 | false | undefined | null
+
 interface UseApiQueryData<TResponseBody extends ResponseBody> {
   data: TResponseBody | undefined | null
   loading: boolean
@@ -57,7 +59,7 @@ export interface UseApiQueryActions<TResponseBody extends ResponseBody> {
  * instance of the response data
  */
 export function useApiQuery<TResponseBody extends ResponseBody>(
-  params: ApiRequestParams<ApiRequestMethod, TResponseBody> | null,
+  params: ApiRequestParams<ApiRequestMethod, TResponseBody> | FalsyValue,
   opts: {
     fetchPolicy?: ApiRequestFetchPolicy
     deduplicate?: boolean
