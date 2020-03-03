@@ -2,22 +2,27 @@
 
 Energize your REST API 🌿 with React hooks and a centralized cache.
 
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/d1g1tinc/restii/build) ![Code Climate coverage](https://img.shields.io/codeclimate/coverage/d1g1tinc/restii) ![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability/d1g1tinc/restii) ![npm bundle size](https://img.shields.io/bundlephobia/minzip/restii) ![npm type definitions](https://img.shields.io/npm/types/restii) ![GitHub stars](https://img.shields.io/github/stars/d1g1tinc/restii?style=social)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/d1g1tinc/restii/build)](https://github.com/d1g1tinc/restii/actions?query=branch%3Amaster) [![Code Climate coverage](https://img.shields.io/codeclimate/coverage/d1g1tinc/restii)](https://codeclimate.com/github/d1g1tinc/restii) [![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability/d1g1tinc/restii)](https://codeclimate.com/github/d1g1tinc/restii) [![npm bundle size](https://img.shields.io/bundlephobia/minzip/restii)](https://bundlephobia.com/result?p=restii@latest) ![npm type definitions](https://img.shields.io/npm/types/restii)
+
+```tsx
+const [{data, loading, error}] = useApiQuery({url: `/users/${id}`})
+```
 
 **Features**:
 
-- 🚀 A set of React hooks for querying HTTP API data
+- 🚀 React hook for querying HTTP API data
 - 💾 Turnkey API response caching
 - 🖇 Parallel request de-duplication
-- 📡 Support for API requests and cache queries outside of React components (in sagas, thunks, etc.)
+- 📡 Support for API requests and cache queries outside of React components (in redux sagas, thunks, etc.)
 - 📥 Parses response bodies of any data type (`'json'`, `'blob'`, `'text'`)
-- 💡 Designed with full Typescript support
+- 🗞 Compatible with almost any REST API
+- 🌳 Exports tree-shakable ES modules
+- ![TS](./typescript.svg?sanitize) Designed with full [Typescript](https://www.typescriptlang.org/) support
 
 **Contents**:
 
-- [Motivation](#motivation)
-- [Basic Usage](#basic-usage)
 - [Installation & Setup](#installation--setup)
+- [Basic Usage](#basic-usage)
 - [Guide](#guide)
   - [Response Cache](#response-cache)
     - [Interacting with the cache when requesting data](#interacting-with-the-cache-when-requesting-data)
@@ -31,7 +36,9 @@ Energize your REST API 🌿 with React hooks and a centralized cache.
   - [Error handling](#error-handling)
   - [Typescript](#typescript)
   - [Usage with Redux](#usage-with-redux)
+- [Motivation](#motivation)
 - [Comparison to similar libraries](#comparison-to-similar-libraries)
+- [Feature Roadmap](#feature-roadmap)
 - [API Documentation](#api-documentation)
   - [`useApiQuery(params: object, opts?: object)`](#useapiqueryparams-object-opts-object)
   - [`ApiProvider`](#apiprovider)
@@ -47,17 +54,38 @@ Energize your REST API 🌿 with React hooks and a centralized cache.
     - [`setDefaultHeader(key: string, value: string)`](#setdefaultheaderkey-string-value-string)
     - [`onError(listener: Function)`](#onerrorlistener-function)
 
-## Motivation
+## Installation & Setup
 
-At [d1g1t](https://github.com/d1g1tinc), we make over 400 REST API calls in our enterprise investment advisor platform. Over time, as we started using React hooks and wanted to introduce caching optimizations, it was clear that we needed to overhaul our internal REST API fetching library to use patterns that scale with our app.
+Install the package as a dependency:
 
-`restii` synthesizes patterns from other libraries, such as [`apollo-client`](https://www.apollographql.com/docs/react/), [`swp`](https://github.com/zeit/swr), and [`react-query`](https://github.com/tannerlinsley/react-query). The primary difference is that it's specifically designed for making HTTP calls to your API. It allows you to request API data with URL paths, query parameters, request bodies, and HTTP headers. The caching layer will deterministically map these HTTP request parameters to response bodies, allowing the user to easily query their API and defer caching logic to `restii`.
+```bash
+npm install --save restii
 
-Since it works well for d1g1t's purposes, we decided to open-source the library to help others who are building REST API-consuming React applications.
+# or
+
+yarn add restii
+```
+
+Create an `Api` instance, add your API's `baseUrl`, and provide it to your app:
+
+```jsx
+import {Api, ApiProvider} from 'restii'
+
+const api = new Api({
+  // ↓ prefixes all request urls
+  baseUrl: 'http://your-api.com'
+})
+
+const App = () => (
+  <ApiProvider api={api}>{/* render your app here */}</ApiProvider>
+)
+```
+
+You can now define endpoints and make requests in your app.
 
 ## Basic Usage
 
-Query your API (ex. fetching a user's profile):
+Query your API:
 
 ```jsx
 import React from 'react'
@@ -78,9 +106,9 @@ const MyComponent = (props) => {
 }
 ```
 
-As you start adding more API requests, we strongly recommend organizing your request definitions into centralized "endpoint" classes, grouped by domain/resource.
+As you add more API requests, we strongly recommend organizing your request definitions into centralized "endpoint" classes, grouped by domain/resource. This will help to encapsulate request-specific logic, reduce path-prefixing boilerplate, and automatically serialize query parameters.
 
-Continuing our example, we'll create a `UserEndpoints` class to define endpoints under the `'/users'` base path. We'll subclass `restii#HttpEndpoints`, which gives us static HTTP helper methods:
+Continuing our example, we'll create a `UserEndpoints` class to define endpoints under the `'/users'` base path. We'll subclass `HttpEndpoints`, which gives us static HTTP helper methods:
 
 ```jsx
 import {HttpEndpoints} from 'restii'
@@ -95,12 +123,14 @@ export class UserEndpoints extends HttpEndpoints {
   static create(body) {
     return super._post('', {body})
   }
+
+  // etc.
 }
 ```
 
 _(All `HttpEndpoints` methods are documented [here](#httpendpoints))_
 
-If your endpoints follow common REST-ful conventions, you can subclass `restii#RestEndpoints` (which subclasses `restii#HttpEndpoints`) to reduce REST boilerplate:
+If your endpoints follow common REST-ful conventions, you can subclass `RestEndpoints` (which subclasses `HttpEndpoints`) to reduce REST boilerplate:
 
 ```jsx
 import {RestEndpoints} from 'restii'
@@ -186,35 +216,6 @@ const DeleteUser = (props) => {
 }
 ```
 
-## Installation & Setup
-
-Install the package as a dependency:
-
-```bash
-npm install --save restii
-
-# or
-
-yarn add restii
-```
-
-Create an `Api` instance and provide it to your app:
-
-```jsx
-import {Api, ApiProvider} from 'restii'
-
-const api = new Api({
-  // ↓ prefixes all request urls
-  baseUrl: 'http://your-api.com'
-})
-
-const App = () => (
-  <ApiProvider api={api}>{/* render your app here */}</ApiProvider>
-)
-```
-
-You can now start defining endpoints and making requests in your app.
-
 ## Guide
 
 ### Response Cache
@@ -233,13 +234,13 @@ const [users] = useApiQuery(UserEndpoints.list(), {
 
 Here are the possible fetch policies:
 
-| Field             | Description                                                                                                                                                                                                                                                                                                                                                                                      |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `no-cache`        | Only fetch from the server and never read from or write to the cache.                                                                                                                                                                                                                                                                                                                            |
-| `cache-first`     | The request will first attempt to read from the cache.<br />If the data is cached, return the data and do not fetch.<br /> If the data isn't cached, make a fetch and then update the cache.                                                                                                                                                                                                     |
-| `fetch-first`     | The request will fetch from the server, and then write the response to the cache.                                                                                                                                                                                                                                                                                                                |
-| `cache-only`      | The request will _only_ read from the cache and never fetch from the server.<br />If the data does not exist, it will throw an `ApiCacheMissError`                                                                                                                                                                                                                                               |
-| `cache-and-fetch` | The request will simultaneously read from the cache and fetch from the server.<br />If the data is in the cache, the promise will resolve with the cached results. Once the fetch resolves, it will update the cache and emit an event to notify listeners of the update.<br />If the data is not in the cache, the promise will resolve with the result of the fetch and then update the cache. |
+| Field             | Description                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `no-cache`        | Only fetch from the server and never read from or write to the cache.                                                                                                                                                                                                                                                                                                                                              |
+| `cache-first`     | The request will first attempt to read from the cache.<br />If the data is cached, return the data and do not fetch.<br /> If the data isn't cached, make a fetch and then update the cache.                                                                                                                                                                                                                       |
+| `fetch-first`     | The request will fetch from the server, and then write the response to the cache.                                                                                                                                                                                                                                                                                                                                  |
+| `cache-only`      | The request will _only_ read from the cache and never fetch from the server.<br />If the data does not exist, it will throw an `ApiCacheMissError`.                                                                                                                                                                                                                                                                |
+| `cache-and-fetch` | The request will simultaneously read from the cache and fetch from the server.<br />If the data is in the cache, the promise will resolve with the cached results. Once the fetch resolves, it will update the cache in the background and emit an event to notify listeners of the update.<br />If the data is not in the cache, the promise will resolve with the result of the fetch and then update the cache. |
 
 If you'd like to override the default `fetchPolicy` for `useApiQuery`, you can pass a `defaultFetchPolicy` prop to `<ApiProvider />`:
 
@@ -251,7 +252,7 @@ const App = () => (
 )
 ```
 
-Similarly, you can pass a `fetchPolicy` when calling `api.request` directly:
+Similarly to `useApiQuery`, you can pass a `fetchPolicy` when calling `api.request` directly:
 
 ```jsx
 const users = await api.request(UserEndpoints.list(), {
@@ -271,13 +272,13 @@ It can be useful to read and write directly to and from the cache. For this, you
 
 #### How request cache keys are determined
 
-Requests are keyed by a deterministic hash of its params. These properties include: `url`, `method`, `headers`, `responseType`, and `extrakEy`.
+Requests are keyed by a deterministic hash of its params. These properties include: `url`, `method`, `headers`, `responseType`, and `extraKey`.
 
-Note that the `body` is _not_ included in the cache key, so equivalent `POST` requests with different `body` would have the same cache key. In these instances, if you would like to utilize the cache, you can set an `extraKey` for that request. See the documentation for [`api.request`](#requestparams-object-opts-object) for more details.
+Note that the `body` is _not_ included in the cache key, so equivalent `POST` requests with different `body` payloads would have the same cache key. In these instances, if you would like to utilize the cache, you can set an `extraKey` for that request. See the documentation for [`api.request`](#requestparams-object-opts-object) for more details.
 
 ### Re-fetching a query
 
-Sometimes, it may be desirable to fetch a new query. This can be done using the `refetch()` action returned by the hook:
+Sometimes, it may be desirable to re-fetch the data in response to a user action. This can be done using the `refetch()` action returned by the hook:
 
 Example:
 
@@ -296,6 +297,8 @@ return (
 )
 ```
 
+- This will _always_ make a fetch to the user, no matter what `fetchPolicy` is
+- If `fetchPolicy: 'no-cache'` is passed to `useApiQuery`, the cache will _not_ be updated after the fetch completes. If `fetchPolicy` is set to anything else, the cache will be updated after the request completes.
 - If `deduplicate` is `true` for the query and there is currently a request in flight, it will not make an additional request. You can force a new fetch by passing a `deduplicate` option: `refresh({ deduplicate: false })`.
 - If you want to reinitialize `data` to `null` when you call `refresh`, you can do so by passing a `reinitialize` option: `refresh({ reinitialize: true })`
 
@@ -318,7 +321,7 @@ const [friends, friendsQueryActions] = useApiQuery(
 // friends.data === null
 // friends.loading === false
 
-// note that `refetch` will be a NOOP at this time:
+// note that `refetch` will be a NOOP:
 friendsQueryActions.refetch()
 ```
 
@@ -414,7 +417,7 @@ try {
 
 **ApiCacheMissError**
 
-When making an Api request with `fetchPolicy: 'cache-only'`, and a cache value does not exist, an `ApiCacheMissError` will be thrown. While you _could_ handle this error by re-fetching over the network, you could simply just use `fetchPolicy: 'cache-and-fetch'` instead.
+When making an Api request with `fetchPolicy: 'cache-only'`, and a cache value does not exist, an `ApiCacheMissError` will be thrown. In cases where you want to handle this error by re-fetching over the network, you could just use `fetchPolicy: 'cache-first'` which will make the fetch for you.
 
 ### Typescript
 
@@ -437,6 +440,10 @@ class UserEndpoints extends RestEndpoints {
   create(body?: Omit<IUser, 'id'>) {
     return super._create<IUser>(body)
   }
+
+  patch(id: number, body: Partial<Omit<IUser, 'id'>>) {
+    return super._update<IUser>(id, body)
+  }
 }
 
 const users = await api.request(
@@ -445,7 +452,6 @@ const users = await api.request(
     page: 2
   })
 )
-
 // `users` has type `IUser[]`
 
 const user = await api.request(
@@ -454,13 +460,19 @@ const user = await api.request(
     lastName: 'Doe'
   })
 )
-
 // `user` has type `IUser`
+
+const updatedUser = await api.request(
+  UserEndpoints.patch(user.id, {
+    firstName: 'Jane'
+  })
+)
+// `updatedUser` has type `IUser`
 ```
 
 ### Usage with Redux
 
-While it is recommended to use the `useApiQuery` hook to make requests in your components, it's possible to make `Api` calls in your Redux middleware (ie. sagas, thunks):
+While it is recommended to use the `useApiQuery` hook to make requests in your components, it's possible to make `Api` calls in your Redux middleware (ie. sagas, thunks).
 
 **Usage with `redux-thunk`**:
 
@@ -523,7 +535,7 @@ function createStore(api) {
   const sagaMiddleware = createSagaMiddleware()
   const store = createStore(reducer, applyMiddleware(sagaMiddleware))
 
-  // pass api to root saga
+  // pass `api` to root saga
   sagaMiddleware.run(rootSaga, api)
   return store
 }
@@ -556,9 +568,33 @@ function* loadUsers() {
 }
 ```
 
+## Motivation
+
+At [d1g1t](https://github.com/d1g1tinc), we make over 400 REST API calls in our enterprise investment advisor platform. Over time, as we started using React hooks and wanted to introduce caching optimizations, it was clear that we needed to overhaul our internal REST API fetching library to use patterns that scale with our app.
+
+Since it works well for d1g1t's purposes, we decided to open-source the library to help others who are building REST API-consuming React applications.
+
 ## Comparison to similar libraries
 
-TODO: add comparisons to `react-query`/`swr`, `rest-hooks`, `apollo-graphql` (with `apollo-link-rest`)
+`restii` synthesizes patterns from other libraries, such as [`apollo-client`](https://www.apollographql.com/docs/react/), [`swp`](https://github.com/zeit/swr), and [`react-query`](https://github.com/tannerlinsley/react-query). It mainly differs in that it's specifically designed for making HTTP calls to your API. It allows you to request API data with URL paths, query parameters, request bodies, and HTTP headers. The caching layer will deterministically map these HTTP request parameters to response bodies, allowing the user to easily query their API and defer caching logic to `restii`.
+
+It's most similar to the out-of-the-box, batteries-included solution that `apollo-client` provides, but for REST rather than GraphQL.
+
+## Feature Roadmap
+
+Here is the current roadmap of features we have in mind:
+
+- Suspense API [#11](https://github.com/d1g1tinc/restii/issues/11)
+- SSR support [#12](https://github.com/d1g1tinc/restii/issues/12)
+- Mutations & Optimistic responses [#28](https://github.com/d1g1tinc/restii/issues/28)
+- Opt-in cache data normalization [#7](https://github.com/d1g1tinc/restii/issues/7)
+- Cache redirects [#10](https://github.com/d1g1tinc/restii/issues/10)
+- Polling mechanism [#9](https://github.com/d1g1tinc/restii/issues/9)
+- Query pagination [#8](https://github.com/d1g1tinc/restii/issues/8)
+
+Feedback is encouraged 🙂.
+
+If you'd like to make a feature request, please [submit an issue](https://github.com/d1g1tinc/restii/issues).
 
 ## API Documentation
 
@@ -889,7 +925,7 @@ The response body.
 
 #### `requestInProgress(params: object)`
 
-If `true`, indicates that an equivalent matching request is currently in progress.
+Returns a boolean when, if `true`, indicates that an equivalent matching request is currently in progress.
 
 <details><summary>Example</summary>
 
