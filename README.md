@@ -13,15 +13,30 @@ Energize your REST API 🌿 with React hooks and a centralized cache.
 - 📥 Parses response bodies of any data type (`'json'`, `'blob'`, `'text'`)
 - 💡 Designed with full Typescript support
 
-## Contents
+**Contents**:
 
-1. [Motivation](#motivation)
-1. [Basic Usage](#basic-usage)
-1. [Installation & Setup](#installation--setup)
-1. [Guide](#guide) _(wip)_
-1. [Comparison to similar libraries](#comparison-to-similar-libraries) _(wip)_
-1. [Usage with Redux](#comparison-to-other-libraries) _(wip)_
-1. [API](#api) _(wip)_
+- [Motivation](#motivation)
+- [Basic Usage](#basic-usage)
+- [Installation & Setup](#installation--setup)
+- [Guide](#guide)
+  - [Caching](#caching)
+    - [How cache data is keyed](#how-cache-data-is-keyed)
+    - [Using the cache when requesting data](#using-the-cache-when-requesting-data)
+    - [Writing to the cache directly](#writing-to-the-cache-directly)
+  - [Dependent queries](#dependent-queries)
+  - [Re-fetching a query](#re-fetching-a-query)
+  - [Custom response body parsing](#custom-response-body-parsing)
+  - [Custom query string serialization](#custom-query-string-serialization)
+  - [Setting default headers (ie. an auth token) for all requests](#setting-default-headers-ie-an-auth-token-for-all-requests)
+  - [Error handling](#error-handling)
+  - [Typescript](#typescript)
+- [Usage with Redux](#usage-with-redux)
+- [Comparison to similar libraries](#comparison-to-similar-libraries)
+- [API Documentation](#api-documentation)
+  - [`Api`](#api)
+    - [`Constructor`](#constructor)
+    - [`request(params, opts)`](#requestparams-opts)
+    - [`requestInProgress()`](#requestinprogress)
 
 ## Motivation
 
@@ -261,7 +276,15 @@ TODO
 
 TODO
 
+### Error handling
+
+TODO
+
 ### Typescript
+
+TODO
+
+## Usage with Redux
 
 TODO
 
@@ -269,10 +292,72 @@ TODO
 
 TODO: add comparisons to `react-query`/`swr`, `rest-hooks`, `apollo-graphql` (with `apollo-link-rest`)
 
-## Usage with Redux
+## API Documentation
 
-TODO
+### `Api`
 
-## API
+#### `Constructor`
 
-TODO
+Example:
+
+```tsx
+import {Api} from 'restii'
+
+const api = new Api({
+  // All fields are optional
+  baseUrl: 'http://your-api.com/api',
+  defaultFetchPolicy: 'fetch-first',
+  serializeRequestJson: (body) => camelize(body),
+  serializeRequestJson: (body) => snakify(body)
+})
+```
+
+Constructor fields:
+
+| Field                                                                                                | Description                                                                                                             |
+| ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `baseUrl?: string`                                                                                   | Base URL of the API. This will prefix all requests.                                                                     |
+| `defaultFetchPolicy?: 'no-cache' | 'cache-first' | 'fetch-first' | 'cache-only' | 'cache-and-fetch'` | Base URL of the API. This will prefix all requests.                                                                     |
+| `serializeRequestJson?(body: object): object`                                                        | When provided, all JSON request bodies will be run through this transformation function before the API request.         |
+| `parseResponseJson?(body: object): object`                                                           | When provided, all JSON response bodies will be run through this transformation function before returning the response. |
+
+#### `request(params, opts)`
+
+Example:
+
+```tsx
+const user = await api.request({
+  // Required fields
+  url: '/users',
+
+  // Optional fields
+  method: 'POST',
+  body: {name: 'Example User',}
+  headers: {'x-user-id': '12345'},
+  responseType: 'json'
+})
+```
+
+`params` fields:
+
+| Field                                                                                                    | Description                                                                                                                                                                                          |
+| -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `url: string`                                                                                            | Path to request, relative to the `baseUrl` provided to the constructor.                                                                                                                              |
+| `method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'`                                                   | HTTP method for the request. Defaults to `GET` if not provided.                                                                                                                                      |
+| `body?: object | string | Blob | BufferSource | FormData | URLSearchParams | ReadableStream<Uint8Array>` | HTTP request body. If a plain JS object is passed, the `Content-Type: 'application/json'` header will automatically be set.                                                                          |
+| `method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'`                                                   | HTTP method for the request. Defaults to `GET` if not provided.                                                                                                                                      |
+| `responseType?: 'json' | 'text' | 'blob'`                                                                | Expected response body format. If provided, the response body will be parsed to the provided format. If not passed, the response body type will be inferred from the `Content-Type` response header. |
+| `extraKey?: string`                                                                                      | An additional key to be serialized into the caching key.                                                                                                                                             |
+
+`opts` fields:
+
+| Field                                                                                         | Description                                                                              |
+| --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `fetchPolicy?: 'no-cache' | 'cache-first' | 'fetch-first' | 'cache-only' | 'cache-and-fetch'` | The fetch policy to use for the request (ie. how to interact with the cache, if at all). |
+| `deduplicate?: 'no-cache' | 'cache-first' | 'fetch-first' | 'cache-only' | 'cache-and-fetch'` | The fetch policy to use for the request (ie. how to interact with the cache).            |
+
+Returns:
+
+The response body: `Promise<object | Blob | string>`
+
+#### `requestInProgress()`
