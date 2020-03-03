@@ -19,10 +19,9 @@ Energize your REST API 🌿 with React hooks and a centralized cache.
 - [Basic Usage](#basic-usage)
 - [Installation & Setup](#installation--setup)
 - [Guide](#guide)
-  - [Caching](#caching)
-    - [How cache data is keyed](#how-cache-data-is-keyed)
-    - [Using the cache when requesting data](#using-the-cache-when-requesting-data)
-    - [Writing to the cache directly](#writing-to-the-cache-directly)
+  - [Response Cache](#response-cache)
+    - [Interacting with the cache when requesting data](#interacting-with-the-cache-when-requesting-data)
+    - [Using the cache directly](#using-the-cache-directly)
   - [Dependent queries](#dependent-queries)
   - [Re-fetching a query](#re-fetching-a-query)
   - [Custom response body parsing](#custom-response-body-parsing)
@@ -35,6 +34,8 @@ Energize your REST API 🌿 with React hooks and a centralized cache.
 - [API Documentation](#api-documentation)
   - [`useApiQuery(params: object, opts?: object)`](#useapiqueryparams-object-opts-object)
   - [`<ApiProvider />`](#apiprovider)
+  - [`HttpEndpoints`](#httpendpoints)
+  - [`RestEndpoints`](#restendpoints)
   - [`Api`](#api)
     - [`Constructor`](#constructor)
     - [`request(params: object, opts?: object)`](#requestparams-object-opts-object)
@@ -249,17 +250,13 @@ You can now start defining endpoints and making requests in your app.
 
 ## Guide
 
-### Caching
+### Response Cache
 
-#### How cache data is keyed
-
-TODO explain how requests are deterministically keyed for caching (without request body)
-
-#### Using the cache when requesting data
+#### Interacting with the cache when requesting data
 
 TODO explain how to use `fetchPolicy`
 
-#### Writing to the cache directly
+#### Using the cache directly
 
 TODO
 
@@ -381,6 +378,150 @@ const App = () => (
 | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `api: Api`                                                                                               | `Api` instance to provide to your app.                                                          |
 | `defaultFetchPolicy?: 'no-cache' \| 'cache-first' \| 'fetch-first' \| 'cache-only' \| 'cache-and-fetch'` | Sets the default `fetchPolicy` for all `useApiQuery()` requests. Defaults to `cache-and-fetch`. |
+
+</details>
+
+### `HttpEndpoints`
+
+This class should be extended to provide your own endpoints for a given `basePath`.
+
+Example:
+
+```tsx
+class UserEndpoints extends HttpEndpoints {
+  static basePath = '/users'
+
+  static list(query) {
+    return super._get('', {query})
+    // {method: 'GET', url: '/users?serializedQuery'}
+  }
+
+  static create(body) {
+    return super._post('', {body})
+    // {method: 'POST', url: '/users'}
+  }
+
+  static findById(id) {
+    return super._get(`/${id}`)
+    // {method: 'GET', url: `/users/${id}`}
+  }
+
+  static update(id, body) {
+    return super._put(`/${id}`, {body})
+    // {method: 'PUT', url: `/users/${id}`, body}
+  }
+
+  static partialUpdate(id, body) {
+    return super._patch(`/${id}`, {body})
+    // {method: 'PATCH', url: `/users/${id}`, body}
+  }
+
+  static destroy(id) {
+    return super._delete(`/${id}`)
+    // {method: 'DELETE', url: `/users/${id}`}
+  }
+
+  // ad-hoc, custom request:
+  static requestPasswordReset(id, resetToken, body) {
+    return super._post(`/users/${id}`, {
+      body,
+      headers: {'x-reset-token': resetToken}
+    })
+    // {method: 'POST', url: `/users/${id}`, headers: {'x-reset-token': resetToken}, body}
+  }
+}
+```
+
+<details><summary>Details</summary>
+
+Static properties and methods:
+
+| Field                                                               | Description                                                                                                                                                                      |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `static basePath?: string`                                          | Base path of the resource. This will automatically prefix the `url` returned by each endpoint you define.                                                                        |
+| `static trailingSlash?: boolean`                                    | If set to `true`, will append a trailing `/` at the end of each request. Eg. `/users/:id` will turn to `/users/:id/`. This is `false` by default).                               |
+| `static _get?: (path: string, init?: RequestInit): RequestParams`   | Creates a `get` request for the given path. See below for `RequestInit` fields.                                                                                                  |
+| `static _post: (path: string, init?: RequestInit): RequestParams`   | Creates a `post` request for the given path. See below for `RequestInit` fields.                                                                                                 |
+| `static _put: (path: string, init?: RequestInit): RequestParams`    | Creates a `put` request for the given path. See below for `RequestInit` fields.                                                                                                  |
+| `static _patch: (path: string, init?: RequestInit): RequestParams`  | Creates a `patch` request for the given path. See below for `RequestInit` fields.                                                                                                |
+| `static _delete: (path: string, init?: RequestInit): RequestParams` | Creates a `delete` request for the given path. See below for `RequestInit` fields.                                                                                               |
+| `static _serializeQuery: (query: object): string`                   | Serializes a `query` object passed to `RequestInit#query` into a search string. The default implementation uses `URLSearchParams`, but can be overrided in a subclass if needed. |
+
+`RequestInit` fields:
+
+| Field                                                                                                          | Description                                                                                                                                               |
+| -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `query?: { [key: string]: string \| number \| boolean }`                                                       | Query parameters. These will run through `_serializeQuery` and append to the returned `url` as the search string.                                         |
+| `headers?: { [key: string]: string }`                                                                          | Custom HTTP headers to pass to the request.                                                                                                               |
+| `body?: object \| string \| Blob \| BufferSource \| FormData \| URLSearchParams \| ReadableStream<Uint8Array>` | HTTP request body (only for non-`GET` requests). If a plain JS object is passed, the `Content-Type: 'application/json'` header will automatically be set. |
+
+</details>
+
+### `RestEndpoints`
+
+This class should be extended to provide your own endpoints for a given `basePath`. It provides RESTful methods that you can call to generate common requests (`list`, `create`, etc).
+
+`RestEndpoints` extends `HttpEndpoints` and inherits all of its functionality.
+
+Example:
+
+```tsx
+class UserEndpoints extends HttpEndpoints {
+  static basePath = '/users'
+
+  static list(query) {
+    return super._get('', {query})
+    // {method: 'GET', url: '/users?serializedQuery'}
+  }
+
+  static create(body) {
+    return super._post('', {body})
+    // {method: 'POST', url: '/users'}
+  }
+
+  static findById(id) {
+    return super._get(`/${id}`)
+    // {method: 'GET', url: `/users/${id}`}
+  }
+
+  static update(id, body) {
+    return super._put(`/${id}`, {body})
+    // {method: 'PUT', url: `/users/${id}`, body}
+  }
+
+  static partialUpdate(id, body) {
+    return super._patch(`/${id}`, {body})
+    // {method: 'PATCH', url: `/users/${id}`, body}
+  }
+
+  static destroy(id) {
+    return super._delete(`/${id}`)
+    // {method: 'DELETE', url: `/users/${id}`}
+  }
+
+  // ad-hoc, custom request:
+  static requestPasswordReset(id, resetToken, body) {
+    return super._post(`/users/${id}`, {
+      body,
+      headers: {'x-reset-token': resetToken}
+    })
+    // {method: 'POST', url: `/users/${id}`, headers: {'x-reset-token': resetToken}, body}
+  }
+}
+```
+
+<details><summary>Details</summary>
+
+In addition to the methods inherited from [`HttpEndpoints`](#httpendpoints), `RestEndpoints` has the following static protected methods:
+
+| Field                                                                                                                                                         | Description                                                                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `static _list?: (query?: { [key: string]: string \| number \| boolean })`                                                                                     | `GET /?search` request. You can optionally pass query parameters to filter the results.                       |
+| `static _create?: (body?: object \| string \| Blob \| BufferSource \| FormData \| URLSearchParams \| ReadableStream<Uint8Array>)`                             | `POST /` request. You can pass the request `body` as the first argument.                                      |
+| `static _findById?: (id: string | number`                                                                                                                     | `GET /:id` request. The resource `id` is the first argument.                                                  |
+| `static _update?: (id: string | number, body?: object \| string \| Blob \| BufferSource \| FormData \| URLSearchParams \| ReadableStream<Uint8Array>)`        | `PUT /:id` request. The resource `id` is the first argument, and the request `body` is the second argument.   |
+| `static _partialUpdate?: (id: string | number, body?: object \| string \| Blob \| BufferSource \| FormData \| URLSearchParams \| ReadableStream<Uint8Array>)` | `PATCH /:id` request. The resource `id` is the first argument, and the request `body` is the second argument. |
+| `static _destroy?: (id: string | number, body?: object \| string \| Blob \| BufferSource \| FormData \| URLSearchParams \| ReadableStream<Uint8Array>)`       | `DELETE /:id` request. The resource `id` is the first argument.                                               |
 
 </details>
 
