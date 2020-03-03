@@ -33,10 +33,17 @@ Energize your REST API 🌿 with React hooks and a centralized cache.
 - [Usage with Redux](#usage-with-redux)
 - [Comparison to similar libraries](#comparison-to-similar-libraries)
 - [API Documentation](#api-documentation)
+  - [`useApiQuery(params: object, opts?: object)`](#useapiqueryparams-object-opts-object)
+  - [`<ApiProvider />`](#apiprovider)
   - [`Api`](#api)
     - [`Constructor`](#constructor)
-    - [`request(params, opts)`](#requestparams-opts)
-    - [`requestInProgress()`](#requestinprogress)
+    - [`request(params: object, opts?: object)`](#requestparams-object-opts-object)
+    - [`requestInProgress(params: object)`](#requestinprogressparams-object)
+    - [`writeCachedResponse(params: object, responseBody?: Blob | object | string)`](#writecachedresponseparams-object-responsebody-blob--object--string)
+    - [`readCachedResponse(params: object)`](#readcachedresponseparams-object)
+    - [`onCacheUpdate(params: object, listener: Function)`](#oncacheupdateparams-object-listener-function)
+    - [`setDefaultHeader(key: string, value: string)`](#setdefaultheaderkey-string-value-string)
+    - [`onError(listener: Function)`](#onerrorlistener-function)
 
 ## Motivation
 
@@ -44,7 +51,7 @@ At [d1g1t](https://github.com/d1g1tinc), we make over 400 REST API calls in our 
 
 `restii` synthesizes patterns from other libraries, such as [`apollo-client`](https://www.apollographql.com/docs/react/), [`swp`](https://github.com/zeit/swr), and [`react-query`](https://github.com/tannerlinsley/react-query). The primary difference is that it's specifically designed for making HTTP calls to your API. It allows you to request API data with URL paths, query parameters, request bodies, and HTTP headers. The caching layer will deterministically map these HTTP request parameters to response bodies, allowing the user to easily query their API and defer caching logic to `restii`.
 
-Since it works well for d1g1t's purposes, we decided to open-source the library to help others who are building a REST API-consuming React application.
+Since it works well for d1g1t's purposes, we decided to open-source the library to help others who are building REST API-consuming React applications.
 
 ## Basic Usage
 
@@ -294,6 +301,89 @@ TODO: add comparisons to `react-query`/`swr`, `rest-hooks`, `apollo-graphql` (wi
 
 ## API Documentation
 
+### `useApiQuery(params: object, opts?: object)`
+
+Example:
+
+```tsx
+import {useApiQuery} from 'restii'
+
+const [user, userQueryActions] = useApiQuery(UserEndpoints.list(), {
+  fetchPolicy: 'cache-and-fetch',
+  deduplicate: true
+})
+
+const {data, loading, error} = user
+
+// to refetch:
+userQueryActions.refetch()
+
+// to imperatively set the data:
+userQueryActions.setData({id: 1, name: 'Jane'})
+```
+
+<details><summary>Details</summary>
+
+`params` fields:
+
+Standard request params. See [Api#request()](#requestparams-object-opts-object) for options.
+
+`opts` fields:
+
+| Field                                                                                             | Description                                                                                                                                                                                                                                                                |
+| ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fetchPolicy?: 'no-cache' \| 'cache-first' \| 'fetch-first' \| 'cache-only' \| 'cache-and-fetch'` | The fetch policy to use for the request. This is passed directly to `api.request` under the hood. By default, this is set to `cache-and-fetch` but can be overridden via `ApiProvider`                                                                                     |
+| `deduplicate?: boolean`                                                                           | If `true`, will deduplicate equivalent requests, ensuring that it only runs once concurrently and returns an equal promise for each parallel call. This is `true` by default for `GET` requests, and `false` by default for `POST`, `PUT`, `PATCH`, and `DELETE` requests. |
+| `dontReinitialize?: boolean`                                                                      | If true, will keep `data` from previous requests until new data is received (ie. it won't reinitialize to `null`).                                                                                                                                                         |
+
+Returns `[queryData, queryActions]`:
+
+`queryData` fields:
+
+| Field                                    | Description                                                            |
+| ---------------------------------------- | ---------------------------------------------------------------------- |
+| `loading: boolean`                       | `true` if there is currently a `request` in-flight.                    |
+| `data: object \| Blob \| string \| null` | The response body. Will `null` if none has been received yet.          |
+| `error: Error \| null`                   | If an error occurs, will be the instance of the error that was thrown. |
+
+`queryActions` fields:
+
+| Field                                                                         | Description                                                                                                                                                                                                   |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `refetch: (opts?: { deduplicate?: boolean, reinitialize?: boolean }) => void` | When called, triggers a data refetch. You can manually override `deduplicate`, which uses the value passed to the hook by default. You can also set `reinitialize: true` to clear `data` (`false` by default) |
+| `setData: (responseBody: object \| Blob \| string)`                           | Manually sets the response `data` of the hook. If `fetchPolicy` is not set to `no-cache`, it will store the response body in the cache as well.                                                               |
+
+</details>
+
+### `<ApiProvider />`
+
+Provides an `Api` instance to a React app.
+
+Example:
+
+```tsx
+import {ApiProvider} from 'restii'
+
+const api = new Api({baseUrl: 'http://your-api.com/api'})
+
+const App = () => (
+  <ApiProvider api={api} defaultFetchPolicy='cache-and-fetch'>
+    {/* render app here */}
+  </ApiProvider>
+)
+```
+
+<details><summary>Details</summary>
+
+`props`:
+
+| Field                                                                                                    | Description                                                                                     |
+| -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `api: Api`                                                                                               | `Api` instance to provide to your app.                                                          |
+| `defaultFetchPolicy?: 'no-cache' \| 'cache-first' \| 'fetch-first' \| 'cache-only' \| 'cache-and-fetch'` | Sets the default `fetchPolicy` for all `useApiQuery()` requests. Defaults to `cache-and-fetch`. |
+
+</details>
+
 ### `Api`
 
 #### `Constructor`
@@ -304,7 +394,6 @@ Example:
 import {Api} from 'restii'
 
 const api = new Api({
-  // All fields are optional
   baseUrl: 'http://your-api.com/api',
   defaultFetchPolicy: 'fetch-first',
   serializeRequestJson: (body) => camelize(body),
@@ -312,52 +401,214 @@ const api = new Api({
 })
 ```
 
+<details><summary>Details</summary>
+
 Constructor fields:
 
-| Field                                                                                                | Description                                                                                                             |
-| ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `baseUrl?: string`                                                                                   | Base URL of the API. This will prefix all requests.                                                                     |
-| `defaultFetchPolicy?: 'no-cache' | 'cache-first' | 'fetch-first' | 'cache-only' | 'cache-and-fetch'` | Base URL of the API. This will prefix all requests.                                                                     |
-| `serializeRequestJson?(body: object): object`                                                        | When provided, all JSON request bodies will be run through this transformation function before the API request.         |
-| `parseResponseJson?(body: object): object`                                                           | When provided, all JSON response bodies will be run through this transformation function before returning the response. |
+| Field                                                                                                    | Description                                                                                                             |
+| -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `baseUrl?: string`                                                                                       | Base URL of the API. This will prefix all requests.                                                                     |
+| `defaultFetchPolicy?: 'no-cache' \| 'cache-first' \| 'fetch-first' \| 'cache-only' \| 'cache-and-fetch'` | Sets the default `fetchPolicy` for all `api.request` calls. Defaults to `fetch-first`.                                  |
+| `serializeRequestJson?(body: object): object`                                                            | When provided, all JSON request bodies will be run through this transformation function before the API request.         |
+| `parseResponseJson?(body: object): object`                                                               | When provided, all JSON response bodies will be run through this transformation function before returning the response. |
 
-#### `request(params, opts)`
+</details>
+
+#### `request(params: object, opts?: object)`
+
+Makes an API request and returns the parsed response body.
 
 Example:
 
 ```tsx
+// Recommended usage with endpoints:
+const user = await api.request(UserEndpoints.list(), {
+  fetchPolicy: 'no-cache',
+  deduplicate: true // true by default for `GET` requests
+})
+
+// Full API:
 const user = await api.request({
-  // Required fields
+  // Required fields:
   url: '/users',
 
-  // Optional fields
+  // Optional fields:
   method: 'POST',
   body: {name: 'Example User',}
   headers: {'x-user-id': '12345'},
-  responseType: 'json'
+  responseType: 'json',
+  extraKey: 'extra_cache_key'
+}, {
+  fetchPolicy: 'no-cache',
+  deduplicate: true
 })
 ```
 
+<details><summary>Details</summary>
+
 `params` fields:
 
-| Field                                                                                                    | Description                                                                                                                                                                                          |
-| -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `url: string`                                                                                            | Path to request, relative to the `baseUrl` provided to the constructor.                                                                                                                              |
-| `method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'`                                                   | HTTP method for the request. Defaults to `GET` if not provided.                                                                                                                                      |
-| `body?: object | string | Blob | BufferSource | FormData | URLSearchParams | ReadableStream<Uint8Array>` | HTTP request body. If a plain JS object is passed, the `Content-Type: 'application/json'` header will automatically be set.                                                                          |
-| `method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'`                                                   | HTTP method for the request. Defaults to `GET` if not provided.                                                                                                                                      |
-| `responseType?: 'json' | 'text' | 'blob'`                                                                | Expected response body format. If provided, the response body will be parsed to the provided format. If not passed, the response body type will be inferred from the `Content-Type` response header. |
-| `extraKey?: string`                                                                                      | An additional key to be serialized into the caching key.                                                                                                                                             |
+| Field                                                                                                          | Description                                                                                                                                                                                          |
+| -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `url: string`                                                                                                  | URL path for the request. This will be appended to the `baseUrl` which was passed to the `Api` constructor.                                                                                          |
+| `method?: 'GET' \| 'POST' \| 'PUT' \| 'PATCH' \| 'DELETE'`                                                     | HTTP method for the request. Defaults to `GET` if not provided.                                                                                                                                      |
+| `headers?: { [key: string]: string }`                                                                          | An object of key-value headers for the request.                                                                                                                                                      |
+| `body?: object \| string \| Blob \| BufferSource \| FormData \| URLSearchParams \| ReadableStream<Uint8Array>` | HTTP request body. If a plain JS object is passed, the `Content-Type: 'application/json'` header will automatically be set.                                                                          |
+| `responseType?: 'json' \| 'text' \| 'blob'`                                                                    | Expected response body format. If provided, the response body will be parsed to the provided format. If not passed, the response body type will be inferred from the `Content-Type` response header. |
+| `extraKey?: string`                                                                                            | An additional key to be serialized into the caching key.                                                                                                                                             |
 
 `opts` fields:
 
-| Field                                                                                         | Description                                                                              |
-| --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `fetchPolicy?: 'no-cache' | 'cache-first' | 'fetch-first' | 'cache-only' | 'cache-and-fetch'` | The fetch policy to use for the request (ie. how to interact with the cache, if at all). |
-| `deduplicate?: 'no-cache' | 'cache-first' | 'fetch-first' | 'cache-only' | 'cache-and-fetch'` | The fetch policy to use for the request (ie. how to interact with the cache).            |
+| Field                                                                                             | Description                                                                                                                                                                                                                                                                |
+| ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fetchPolicy?: 'no-cache' \| 'cache-first' \| 'fetch-first' \| 'cache-only' \| 'cache-and-fetch'` | The fetch policy to use for the request (ie. how to interact with the cache, if at all).                                                                                                                                                                                   |
+| `deduplicate?: boolean`                                                                           | If `true`, will deduplicate equivalent requests, ensuring that it only runs once concurrently and returns an equal promise for each parallel call. This is `true` by default for `GET` requests, and `false` by default for `POST`, `PUT`, `PATCH`, and `DELETE` requests. |
+
+Returns `Promise<object | Blob | string>`:
+
+The response body.
+
+</details>
+
+#### `requestInProgress(params: object)`
+
+If `true`, indicates that an equivalent matching request is currently in progress.
+
+Example:
+
+```tsx
+const user = await api.requestInProgress(UserEndpoints.list())
+```
+
+<details><summary>Details</summary>
+
+`params` fields:
+
+Standard request params. See [Api#request()](#requestparams-object-opts-object) for options.
 
 Returns:
 
-The response body: `Promise<object | Blob | string>`
+`boolean`
 
-#### `requestInProgress()`
+</details>
+
+#### `writeCachedResponse(params: object, responseBody?: Blob | object | string)`
+
+Sets the cached response body for a given set of request params.
+
+Example:
+
+```tsx
+const user = await api.writeCachedResponse(UserEndpoints.list(), [
+  {id: 1, name: 'Jane'},
+  {id: 2, name: 'Joe'}
+])
+```
+
+<details><summary>Details</summary>
+
+`params` fields:
+
+Standard request params. See [Api#request()](#requestparams-object-opts-object) for options.
+
+`responseBody`:
+
+The response body to cache.
+
+</details>
+
+#### `readCachedResponse(params: object)`
+
+Reads a response directly from the cache.
+
+The main reason you would use this over `Api#request` with a cached fetch policy is that this runs synchronously.
+
+Note that if there is a cache miss, it will return `undefined`.
+
+Example:
+
+```tsx
+const user = api.readCachedResponse(UserEndpoints.findById(3))
+```
+
+<details><summary>Details</summary>
+
+`params` fields:
+
+Standard request params. See [Api#request()](#requestparams-object-opts-object) for options.
+
+Returns `object | Blob | string`:
+
+The cached response body, or `undefined` on cache miss.
+
+</details>
+
+#### `onCacheUpdate(params: object, listener: Function)`
+
+Subscribes to cache updates for a given param's response.
+
+Example:
+
+```tsx
+const unsubscribe = api.onCacheUpdate(UserEndpoints.list(), (users) => {
+  // handle updated `users` in cache
+})
+
+// invoke returned function to unsubscribe:
+unsubscribe()
+```
+
+<details><summary>Details</summary>
+
+`params` fields:
+
+Standard request params. See [Api#request()](#requestparams-object-opts-object) for options.
+
+`listener: (responseBody: object | blob | string) => void`
+
+Invoked when the cache updates for the given request params.
+
+Returns `() => void`:
+
+A function that, when called, unsubscribes the listener.
+
+</details>
+
+#### `setDefaultHeader(key: string, value: string)`
+
+Sets a default header that is passed to all requests.
+
+Example:
+
+```tsx
+api.setDefaultHeader('X-Auth-Token', '123456')
+```
+
+#### `onError(listener: Function)`
+
+Subscribes to Api errors. This would be useful for error reporting or to handle an invalid auth token by logging out.
+
+Example:
+
+```tsx
+import {ApiError} from 'restii'
+
+api.onError((error) => {
+  // handle error
+})
+
+// invoke returned function to unsubscribe:
+unsubscribe()
+```
+
+<details><summary>Details</summary>
+
+`listener: (error: Error) => void`
+
+Invoked when an error occurred. It's likely an instance of `ApiError` for a non-200 status code.
+
+Returns `() => void`:
+
+A function that, when called, unsubscribes the listener.
+
+</details>
