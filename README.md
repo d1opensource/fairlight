@@ -1,8 +1,8 @@
-# restii
+# fairlight
 
-Energize your REST API 🌿 with React hooks and a centralized cache.
+Illuminate your REST API 🌿 with React hooks and a centralized cache.
 
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/d1g1tinc/restii/build)](https://github.com/d1g1tinc/restii/actions?query=branch%3Amaster) [![Code Climate coverage](https://img.shields.io/codeclimate/coverage/d1g1tinc/restii)](https://codeclimate.com/github/d1g1tinc/restii) [![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability/d1g1tinc/restii)](https://codeclimate.com/github/d1g1tinc/restii) [![npm bundle size](https://img.shields.io/bundlephobia/minzip/restii)](https://bundlephobia.com/result?p=restii@latest) ![npm type definitions](https://img.shields.io/npm/types/restii)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/d1g1tinc/fairlight/build)](https://github.com/d1g1tinc/fairlight/actions?query=branch%3Amaster) [![Code Climate coverage](https://img.shields.io/codeclimate/coverage/d1g1tinc/fairlight)](https://codeclimate.com/github/d1g1tinc/fairlight) [![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability/d1g1tinc/fairlight)](https://codeclimate.com/github/d1g1tinc/fairlight) [![npm bundle size](https://img.shields.io/bundlephobia/minzip/fairlight)](https://bundlephobia.com/result?p=fairlight@latest) ![npm type definitions](https://img.shields.io/npm/types/fairlight)
 
 ```tsx
 const [{data, loading, error}] = useApiQuery({url: `/users/${id}`})
@@ -59,17 +59,17 @@ const [{data, loading, error}] = useApiQuery({url: `/users/${id}`})
 Install the package as a dependency:
 
 ```bash
-npm install --save restii
+npm install --save fairlight
 
 # or
 
-yarn add restii
+yarn add fairlight
 ```
 
 Create an `Api` instance, add your API's `baseUrl`, and provide it to your app:
 
 ```jsx
-import {Api, ApiProvider} from 'restii'
+import {Api, ApiProvider} from 'fairlight'
 
 const api = new Api({
   // ↓ prefixes all request urls
@@ -89,7 +89,7 @@ Query your API:
 
 ```jsx
 import React from 'react'
-import {useApiQuery} from 'restii'
+import {useApiQuery} from 'fairlight'
 
 const MyComponent = (props) => {
   const [userQuery] = useApiQuery({url: `/users/${props.userId}`})
@@ -111,7 +111,7 @@ As you add more API requests, we strongly recommend organizing your request defi
 Continuing our example, we'll create a `UserEndpoints` class to define endpoints under the `'/users'` base path. We'll subclass `HttpEndpoints`, which gives us static HTTP helper methods:
 
 ```jsx
-import {HttpEndpoints} from 'restii'
+import {HttpEndpoints} from 'fairlight'
 
 export class UserEndpoints extends HttpEndpoints {
   static basePath = '/users'
@@ -133,7 +133,7 @@ _(All `HttpEndpoints` methods are documented [here](#httpendpoints))_
 If your endpoints follow common REST-ful conventions, you can subclass `RestEndpoints` (which subclasses `HttpEndpoints`) to reduce REST boilerplate:
 
 ```jsx
-import {RestEndpoints} from 'restii'
+import {RestEndpoints} from 'fairlight'
 
 export class UserEndpoints extends RestEndpoints {
   static basePath = '/users'
@@ -170,7 +170,7 @@ Then you can use these endpoints to make queries:
 
 ```jsx
 import React from 'react'
-import {useApiQuery} from 'restii'
+import {useApiQuery} from 'fairlight'
 
 import {UserEndpoints} from 'my-app/endpoints'
 
@@ -185,7 +185,7 @@ To make one-off requests (ie. form submissions, deletions, etc), you can use the
 
 ```jsx
 import React, {useState} from 'react'
-import {useApi} from 'restii'
+import {useApi} from 'fairlight'
 
 import {UserEndpoints} from 'my-app/endpoints'
 
@@ -396,7 +396,7 @@ Api requests can return two types of errors:
 If a request returns a non-200 status code, an `ApiError` is thrown. You can catch these errors and perform additional handling:
 
 ```jsx
-import {ApiError} from 'restii'
+import {ApiError} from 'fairlight'
 
 try {
   await api.request(UserEndpoints.create({name: 'ExistingUser'}))
@@ -482,7 +482,7 @@ When you instantiate your redux store, you can pass your `Api` client instance a
 import {createStore, applyMiddleware} from 'redux'
 import {Provider} from 'react-redux'
 import thunk from 'redux-thunk'
-import {Api} from 'restii'
+import {Api} from 'fairlight'
 
 const api = new Api()
 
@@ -522,7 +522,7 @@ The following example is likely be broken down into separate files, but is inclu
 import {createStore, applyMiddleware} from 'redux'
 import createSagaMiddleware from 'redux-saga'
 import {Provider} from 'react-redux'
-import {Api} from 'restii'
+import {Api} from 'fairlight'
 
 // define root saga
 function* rootSaga(api) {
@@ -576,7 +576,7 @@ Since it works well for d1g1t's purposes, we decided to open-source the library 
 
 ## Comparison to similar libraries
 
-`restii` synthesizes patterns from other libraries, such as [`apollo-client`](https://www.apollographql.com/docs/react/), [`swp`](https://github.com/zeit/swr), and [`react-query`](https://github.com/tannerlinsley/react-query). It mainly differs in that it's specifically designed for making HTTP calls to your API. It allows you to request API data with URL paths, query parameters, request bodies, and HTTP headers. The caching layer will deterministically map these HTTP request parameters to response bodies, allowing the user to easily query their API and defer caching logic to `restii`.
+`fairlight` synthesizes patterns from other libraries, such as [`apollo-client`](https://www.apollographql.com/docs/react/), [`swp`](https://github.com/zeit/swr), and [`react-query`](https://github.com/tannerlinsley/react-query). It mainly differs in that it's specifically designed for making HTTP calls to your API. It allows you to request API data with URL paths, query parameters, request bodies, and HTTP headers. The caching layer will deterministically map these HTTP request parameters to response bodies, allowing the user to easily query their API and defer caching logic to `fairlight`.
 
 It's most similar to the out-of-the-box, batteries-included solution that `apollo-client` provides, but for REST rather than GraphQL.
 
@@ -584,17 +584,17 @@ It's most similar to the out-of-the-box, batteries-included solution that `apoll
 
 Here is the current roadmap of features we have in mind:
 
-- Suspense API [#11](https://github.com/d1g1tinc/restii/issues/11)
-- SSR support [#12](https://github.com/d1g1tinc/restii/issues/12)
-- Mutations & Optimistic responses [#28](https://github.com/d1g1tinc/restii/issues/28)
-- Opt-in cache data normalization [#7](https://github.com/d1g1tinc/restii/issues/7)
-- Cache redirects [#10](https://github.com/d1g1tinc/restii/issues/10)
-- Polling mechanism [#9](https://github.com/d1g1tinc/restii/issues/9)
-- Query pagination [#8](https://github.com/d1g1tinc/restii/issues/8)
+- Suspense API [#11](https://github.com/d1g1tinc/fairlight/issues/11)
+- SSR support [#12](https://github.com/d1g1tinc/fairlight/issues/12)
+- Mutations & Optimistic responses [#28](https://github.com/d1g1tinc/fairlight/issues/28)
+- Opt-in cache data normalization [#7](https://github.com/d1g1tinc/fairlight/issues/7)
+- Cache redirects [#10](https://github.com/d1g1tinc/fairlight/issues/10)
+- Polling mechanism [#9](https://github.com/d1g1tinc/fairlight/issues/9)
+- Query pagination [#8](https://github.com/d1g1tinc/fairlight/issues/8)
 
 Feedback is encouraged 🙂.
 
-If you'd like to make a feature request, please [submit an issue](https://github.com/d1g1tinc/restii/issues).
+If you'd like to make a feature request, please [submit an issue](https://github.com/d1g1tinc/fairlight/issues).
 
 ## API Documentation
 
@@ -603,7 +603,7 @@ If you'd like to make a feature request, please [submit an issue](https://github
 <details><summary>Example</summary>
 
 ```jsx
-import {useApiQuery} from 'restii'
+import {useApiQuery} from 'fairlight'
 
 const [user, userQueryActions] = useApiQuery(UserEndpoints.list(), {
   fetchPolicy: 'cache-and-fetch',
@@ -661,7 +661,7 @@ Provides an `Api` instance to a React app.
 <details><summary>Example</summary>
 
 ```jsx
-import {ApiProvider} from 'restii'
+import {ApiProvider} from 'fairlight'
 
 const api = new Api({baseUrl: 'http://your-api.com/api'})
 
@@ -840,7 +840,7 @@ In addition to the methods inherited from [`HttpEndpoints`](#httpendpoints), `Re
 <details><summary>Example</summary>
 
 ```jsx
-import {Api} from 'restii'
+import {Api} from 'fairlight'
 
 const api = new Api({
   baseUrl: 'http://your-api.com/api',
@@ -1054,7 +1054,7 @@ Subscribes to Api errors. This is useful for error reporting or to handle an inv
 <details><summary>Example</summary>
 
 ```jsx
-import {ApiError} from 'restii'
+import {ApiError} from 'fairlight'
 
 api.onError((error) => {
   // handle error

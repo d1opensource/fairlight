@@ -1,6 +1,6 @@
 {
-  "name": "restii",
-  "description": "Energize your REST API with React hooks and a centralized cache.",
+  "name": "fairlight",
+  "description": "Illuminate your REST API with React hooks and a centralized cache.",
   "keywords": [
     "rest",
     "api",
@@ -20,12 +20,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/d1g1tinc/restii.git"
+    "url": "git+https://github.com/d1g1tinc/fairlight.git"
   },
   "bugs": {
-    "url": "https://github.com/d1g1tinc/restii/issues"
+    "url": "https://github.com/d1g1tinc/fairlight/issues"
   },
-  "homepage": "https://github.com/d1g1tinc/restii",
+  "homepage": "https://github.com/d1g1tinc/fairlight",
   "scripts": {
     "test": "jest",
     "lint": "eslint 'src/**/*.tsx'",
