@@ -1,6 +1,6 @@
 # fairlight
 
-Illuminate your REST API 🌿 with React hooks and a centralized cache.
+Illuminate your REST API 💡 with React hooks and a centralized cache.
 
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/d1g1tinc/fairlight/build)](https://github.com/d1g1tinc/fairlight/actions?query=branch%3Amaster) [![Code Climate coverage](https://img.shields.io/codeclimate/coverage/d1g1tinc/fairlight)](https://codeclimate.com/github/d1g1tinc/fairlight) [![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability/d1g1tinc/fairlight)](https://codeclimate.com/github/d1g1tinc/fairlight) [![npm bundle size](https://img.shields.io/bundlephobia/minzip/fairlight)](https://bundlephobia.com/result?p=fairlight@latest) ![npm type definitions](https://img.shields.io/npm/types/fairlight)
 
