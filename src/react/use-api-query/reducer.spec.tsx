@@ -1,5 +1,5 @@
 import {getParamsId} from '../../api/lib'
-import {IApiRequestParams} from '../../api/typings'
+import {ApiRequestParams} from '../../api/typings'
 import {useApiQueryActions} from './actions'
 import {useApiQueryReducer} from './reducer'
 
@@ -27,7 +27,7 @@ it('stores a successful response data if it matches the most recent request', ()
     {type: '@@INIT', payload: null} as any
   )
 
-  const params: IApiRequestParams = {
+  const params: ApiRequestParams = {
     method: 'GET',
     url: '/endpoint'
   }
@@ -115,7 +115,7 @@ it('only starts a refetch request if the request params are correct', () => {
   )
 
   const id = Symbol()
-  const params: IApiRequestParams = {
+  const params: ApiRequestParams = {
     method: 'GET',
     url: '/endpoint'
   }

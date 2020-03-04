@@ -1,14 +1,14 @@
-import {useEffect, useMemo, useReducer, useRef} from 'react'
+import {useContext, useEffect, useMemo, useReducer, useRef} from 'react'
 
 import {READ_CACHE_POLICIES} from '../../api/constants'
 import {getParamsId} from '../../api/lib'
 import {
   ApiRequestFetchPolicy,
   ApiRequestMethod,
-  IApiRequestParams,
+  ApiRequestParams,
   ResponseBody
 } from '../../api/typings'
-import {useApi} from '../use-api'
+import {ApiContext} from '../context'
 import {useApiQueryActions} from './actions'
 import {useApiQueryReducer} from './reducer'
 
@@ -45,9 +45,10 @@ export interface UseApiQueryActions<TResponseBody extends ResponseBody> {
      * Passed as an option to `api.request` and guarantees that a
      * new request will be made.
      *
-     * By default, it will use `forceNewFetch` from the hook's options (`false` by default).
+     * By default, it will use `deduplicate` from the hook's options
+     * (`true` for `GET` requests, `false` for non-`GET` requests).
      */
-    forceNewFetch?: boolean
+    deduplicate?: boolean
   }) => void
 }
 
@@ -56,19 +57,10 @@ export interface UseApiQueryActions<TResponseBody extends ResponseBody> {
  * instance of the response data
  */
 export function useApiQuery<TResponseBody extends ResponseBody>(
-  params: IApiRequestParams<ApiRequestMethod, TResponseBody> | null,
+  params: ApiRequestParams<ApiRequestMethod, TResponseBody> | null,
   opts: {
     fetchPolicy?: ApiRequestFetchPolicy
-    forceNewFetch?: boolean
-
-    /**
-     * Similar to the dependencies array that is passed to `useEffect`, `useMemo`, and `useCallback`.
-     *
-     * This is specifically helpful for example when you want to retrigger a `POST` request
-     * when parameters in the request body change, since `body` changes do not trigger
-     * a new fetch.
-     */
-    refetchOn?: any[]
+    deduplicate?: boolean
 
     /**
      * If true, will keep `data` from previous requests
@@ -77,8 +69,8 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
     dontReinitialize?: boolean
   } = {}
 ): [UseApiQueryData<TResponseBody>, UseApiQueryActions<TResponseBody>] {
-  const api = useApi()
-  const fetchPolicy = opts.fetchPolicy || api.defaultFetchPolicy
+  const {api, defaultFetchPolicy} = useContext(ApiContext)
+  const fetchPolicy = opts.fetchPolicy || defaultFetchPolicy
   const paramsId = params && getParamsId(params)
   const [state, dispatch] = useReducer(useApiQueryReducer, null, () => ({
     id: null,
@@ -128,7 +120,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
       try {
         const data = await api.request(params, {
           fetchPolicy,
-          forceNewFetch: opts.forceNewFetch
+          deduplicate: opts.deduplicate
         })
         dispatch(
           useApiQueryActions.success({
@@ -151,7 +143,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
     return () => {
       unsubscribe()
     }
-  }, [paramsId, ...(opts.refetchOn || [])])
+  }, [paramsId])
 
   // return loading flag if `useEffect` hasn't kicked in yet
   // but the a new request is about to kick off
@@ -198,7 +190,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
           const data = await api.request(params, {
             fetchPolicy:
               fetchPolicy === 'no-cache' ? 'no-cache' : 'fetch-first',
-            forceNewFetch: opts.forceNewFetch || refetchOpts.forceNewFetch
+            deduplicate: refetchOpts.deduplicate ?? opts.deduplicate
           })
           dispatch(useApiQueryActions.success({id, paramsId, data}))
         } catch (error) {

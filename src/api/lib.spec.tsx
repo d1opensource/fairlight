@@ -1,12 +1,18 @@
 import {applyHeaders, getParamsId} from './lib'
-import {IApiRequestParams} from './typings'
+import {ApiRequestParams} from './typings'
 
 describe('getParamsId', () => {
   it('serializes basic requests', () => {
-    const requestParams: IApiRequestParams = {
+    const requestParams: ApiRequestParams = {
       method: 'GET',
       url: '/endpoint'
     }
+
+    expect(getParamsId(requestParams)).toEqual(
+      getParamsId({
+        url: '/endpoint' // method defaults to GET
+      })
+    )
 
     expect(getParamsId(requestParams)).not.toEqual(
       getParamsId({
@@ -24,7 +30,7 @@ describe('getParamsId', () => {
   })
 
   it('serializes headers', () => {
-    const requestParams: IApiRequestParams = {
+    const requestParams: ApiRequestParams = {
       method: 'GET',
       url: '/endpoint'
     }
@@ -92,7 +98,7 @@ describe('getParamsId', () => {
   })
 
   it('serializes response type', () => {
-    const requestParams: IApiRequestParams = {
+    const requestParams: ApiRequestParams = {
       method: 'GET',
       url: '/endpoint',
       responseType: null
@@ -128,6 +134,43 @@ describe('getParamsId', () => {
         responseType: 'json'
       })
     )
+  })
+
+  it('serializes an extra key', () => {
+    const requestParams: ApiRequestParams = {
+      method: 'GET',
+      url: '/endpoint'
+    }
+
+    for (const extraKey of [null, undefined]) {
+      expect(getParamsId(requestParams)).toEqual(
+        getParamsId({
+          ...requestParams,
+          extraKey
+        })
+      )
+    }
+
+    expect(
+      getParamsId({
+        ...requestParams,
+        extraKey: 'test'
+      })
+    ).toEqual(
+      getParamsId({
+        ...requestParams,
+        extraKey: 'test'
+      })
+    )
+
+    for (const extraKey of ['', 'one']) {
+      expect(getParamsId(requestParams)).not.toEqual(
+        getParamsId({
+          ...requestParams,
+          extraKey
+        })
+      )
+    }
   })
 })
 

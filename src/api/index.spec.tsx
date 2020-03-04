@@ -2,7 +2,7 @@ import 'jest-fetch-mock'
 
 import {Api} from './'
 import {ApiCacheMissError, ApiError} from './errors'
-import {IApiRequestParams} from './typings'
+import {ApiRequestMethod, ApiRequestParams} from './typings'
 
 const BASE_URL = 'http://test.com'
 let api: Api
@@ -12,11 +12,11 @@ beforeEach(() => {
   fetchMock.mockClear()
 })
 
-it('does not require a base URL', async () => {
+it('does not require a base URL or method to make a GET request', async () => {
   fetchMock.mockResponseOnce(JSON.stringify({num: 12345}), {
     headers: {'content-type': 'application/json'}
   })
-  await new Api().request({method: 'GET', url: 'http://some_site.com/endpoint'})
+  await new Api().request({url: 'http://some_site.com/endpoint'})
   const request = fetchMock.mock.calls[0][0] as Request
   expect(request.url).toEqual('http://some_site.com/endpoint')
 })
@@ -28,6 +28,18 @@ it('applies the base URL to requests', async () => {
   await api.request({method: 'GET', url: '/endpoint'})
   const request = fetchMock.mock.calls[0][0] as Request
   expect(request.url).toEqual('http://test.com/endpoint')
+})
+
+describe('defaultFetchPolicy', () => {
+  it('defaults to fetch-first', () => {
+    expect(new Api().defaultFetchPolicy).toEqual('fetch-first')
+  })
+
+  it('can be overridden', () => {
+    expect(
+      new Api({defaultFetchPolicy: 'no-cache'}).defaultFetchPolicy
+    ).toEqual('no-cache')
+  })
 })
 
 describe('request headers', () => {
@@ -176,7 +188,7 @@ describe('fetch policies', () => {
       headers: {'content-type': 'application/json'}
     })
 
-    const params: IApiRequestParams<'GET', {}> = {
+    const params: ApiRequestParams<'GET', {}> = {
       method: 'GET',
       url: '/endpoint'
     }
@@ -241,7 +253,7 @@ describe('fetch policies', () => {
       headers: {'content-type': 'application/json'}
     })
 
-    const params: IApiRequestParams<'GET', {}> = {
+    const params: ApiRequestParams<'GET', {}> = {
       method: 'GET',
       url: '/endpoint'
     }
@@ -271,14 +283,14 @@ describe('fetch policies', () => {
   })
 })
 
-describe('GET promise cache', () => {
+describe('deduplication', () => {
   it('Api#requestInProgress returns true when there are outstanding requests', async () => {
     const responseBody = {test: 'data'}
     fetchMock.mockResponse(JSON.stringify(responseBody), {
       headers: {'content-type': 'application/json'}
     })
 
-    const params: IApiRequestParams<'GET', {}> = {
+    const params: ApiRequestParams<'GET', {}> = {
       method: 'GET',
       url: '/endpoint'
     }
@@ -297,7 +309,7 @@ describe('GET promise cache', () => {
       headers: {'content-type': 'application/json'}
     })
 
-    const params: IApiRequestParams<'GET', {}> = {
+    const params: ApiRequestParams<'GET', {}> = {
       method: 'GET',
       url: '/endpoint'
     }
@@ -312,19 +324,19 @@ describe('GET promise cache', () => {
     expect(fetchMock).toBeCalledTimes(1)
   })
 
-  test('new request called with matching params and forceNewFetch=true starts new request', async () => {
+  test('new request called with matching params and deduplicate=false starts new request', async () => {
     const responseBody = {test: 'data'}
     fetchMock.mockResponse(JSON.stringify(responseBody), {
       headers: {'content-type': 'application/json'}
     })
 
-    const params: IApiRequestParams<'GET', {}> = {
+    const params: ApiRequestParams<'GET', {}> = {
       method: 'GET',
       url: '/endpoint'
     }
 
     api.request(params)
-    const requestPromiseCopy = api.request(params, {forceNewFetch: true})
+    const requestPromiseCopy = api.request(params, {deduplicate: false})
 
     await requestPromiseCopy
 
@@ -337,7 +349,7 @@ describe('GET promise cache', () => {
       headers: {'content-type': 'application/json'}
     })
 
-    const params: IApiRequestParams<'GET', {}> = {
+    const params: ApiRequestParams<'GET', {}> = {
       method: 'GET',
       url: '/endpoint'
     }
@@ -349,10 +361,92 @@ describe('GET promise cache', () => {
 
     await requestPromiseCopy
   })
+
+  describe('GET requests', () => {
+    it('deduplicates by default', async () => {
+      const responseBody = {test: 'data'}
+      fetchMock.mockResponse(JSON.stringify(responseBody), {
+        headers: {'content-type': 'application/json'}
+      })
+
+      const params: ApiRequestParams = {
+        method: 'GET',
+        url: '/endpoint'
+      }
+
+      await Promise.all([api.request(params), api.request(params)])
+
+      expect(fetchMock).toBeCalledTimes(1)
+    })
+
+    it('deduplicates by default', async () => {
+      const responseBody = {test: 'data'}
+      fetchMock.mockResponse(JSON.stringify(responseBody), {
+        headers: {'content-type': 'application/json'}
+      })
+
+      const params: ApiRequestParams = {
+        method: 'GET',
+        url: '/endpoint'
+      }
+
+      await Promise.all([
+        api.request(params, {deduplicate: false}),
+        api.request(params, {deduplicate: false})
+      ])
+
+      expect(fetchMock).toBeCalledTimes(2)
+    })
+  })
+
+  describe('non-GET requests', () => {
+    const nonGetMethods: ApiRequestMethod[] = ['POST', 'PATCH', 'PUT', 'DELETE']
+
+    it('does not deduplicate by default', async () => {
+      for (const method of nonGetMethods) {
+        const responseBody = {test: 'data'}
+        fetchMock.mockClear()
+        fetchMock.mockResponse(JSON.stringify(responseBody), {
+          headers: {'content-type': 'application/json'}
+        })
+
+        const params: ApiRequestParams = {
+          method,
+          url: '/endpoint'
+        }
+
+        await Promise.all([api.request(params), api.request(params)])
+
+        expect(fetchMock).toBeCalledTimes(2)
+      }
+    })
+
+    it('can be disabled', async () => {
+      for (const method of nonGetMethods) {
+        const responseBody = {test: 'data'}
+        fetchMock.mockClear()
+        fetchMock.mockResponse(JSON.stringify(responseBody), {
+          headers: {'content-type': 'application/json'}
+        })
+
+        const params: ApiRequestParams = {
+          method,
+          url: '/endpoint'
+        }
+
+        await Promise.all([
+          api.request(params, {deduplicate: true}),
+          api.request(params, {deduplicate: true})
+        ])
+
+        expect(fetchMock).toBeCalledTimes(1)
+      }
+    })
+  })
 })
 
 test('manual cache read/write and listener', async () => {
-  const params: IApiRequestParams<'GET', {}> = {
+  const params: ApiRequestParams<'GET', {}> = {
     method: 'GET',
     url: '/endpoint'
   }

@@ -63,21 +63,42 @@ describe('HttpEndpoints', () => {
     }
   })
 
-  describe('query', () => {
-    test('default query serialization', () => {
-      const query = {
-        str: 'string',
-        num: 3,
-        undefined,
-        null: null,
-        empty: '',
-        zero: 0
-      }
+  test('default query serialization', () => {
+    const query = {
+      str: 'string',
+      num: 3,
+      undefined,
+      null: null,
+      empty: '',
+      zero: 0
+    }
+
+    for (const method of ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']) {
+      expect(Endpoints[method]({query})).toEqual({
+        method,
+        url: '/base/endpoint?empty=&null=null&num=3&str=string&zero=0'
+      })
+    }
+  })
+
+  test('extra key', () => {
+    for (const method of ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']) {
+      expect(Endpoints[method]({extraKey: 'test'})).toEqual({
+        method,
+        url: '/base/endpoint',
+        extraKey: 'test'
+      })
+    }
+  })
+
+  describe('trailing slash', () => {
+    test('applying trailing slash to each url', () => {
+      ;(Endpoints as any).trailingSlash = true
 
       for (const method of ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']) {
-        expect(Endpoints[method]({query})).toEqual({
+        expect(Endpoints[method]()).toEqual({
           method,
-          url: '/base/endpoint?empty=&null=null&num=3&str=string&zero=0'
+          url: '/base/endpoint/'
         })
       }
     })

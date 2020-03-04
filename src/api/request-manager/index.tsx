@@ -1,16 +1,16 @@
 import EventEmitter from 'eventemitter3'
 
-import {DEFAULT_FETCH_POLICY} from '../constants'
+import {DEFAULT_FETCH_POLICY, DEFAULT_REQUEST_METHOD} from '../constants'
 import {ApiError} from '../errors'
 import {GenericCache} from '../generic-cache'
 import {applyHeaders, createSubscription, getParamsId} from '../lib'
 import {ApiRequestFetcher} from '../request-fetcher'
 import {
+  ApiParseResponseJson,
   ApiRequestMethod,
   ApiRequestOptions,
-  IApiParseResponseJson,
-  IApiRequestParams,
-  IApiSerializeRequestJson,
+  ApiRequestParams,
+  ApiSerializeRequestJson,
   RequestBody,
   RequestFetcher,
   ResponseBody
@@ -40,15 +40,15 @@ export class ApiRequestManager {
 
   private requestFetcher: RequestFetcher
 
-  private serializeRequestJson: IApiSerializeRequestJson
+  private serializeRequestJson: ApiSerializeRequestJson
 
-  private parseResponseJson: IApiParseResponseJson
+  private parseResponseJson: ApiParseResponseJson
 
   private defaultHeaders = new Headers()
 
   private inProgressRequestCache = new GenericCache<{
     id: symbol
-    fetchPromise: Promise<ResponseBody | null>
+    requestPromise: Promise<ResponseBody | null>
   }>()
 
   constructor(params: {
@@ -60,12 +60,12 @@ export class ApiRequestManager {
      * When provided, all API JSON request bodies will be run
      * through this transformation function before the API request
      */
-    serializeRequestJson?: IApiSerializeRequestJson
+    serializeRequestJson?: ApiSerializeRequestJson
     /**
      * When provided, all API JSON response bodies will be run
      * through this transformation function before returning the response
      */
-    parseResponseJson?: IApiParseResponseJson
+    parseResponseJson?: ApiParseResponseJson
     requestFetcher?: RequestFetcher
   }) {
     this.baseUrl = params.baseUrl || ''
@@ -77,40 +77,39 @@ export class ApiRequestManager {
   /**
    * Returns a promise that resolves with the response body.
    *
-   * If there is an in-progress request, and `options.forceNewFetch` is `false`,
+   * If there is an in-progress request, and `options.deduplicate` is `true`,
    * it will return the same promise.
    *
    * On a successful fetch, it will cache the response unless `fetchPolicy` is `'no-cache'`
    */
   getResponseBody = <TResponseBody extends ResponseBody>(
-    params: IApiRequestParams<ApiRequestMethod, TResponseBody>,
+    params: ApiRequestParams<ApiRequestMethod, TResponseBody>,
     options: ApiRequestOptions
   ): Promise<TResponseBody | null> => {
-    if (params.method !== 'GET') {
-      // only cache in-progress requests for GET requests
-      return this.fetchResponseBody(params, options) as Promise<TResponseBody>
-    }
-
     const paramsKey = getParamsId(params)
 
     // return cached promise if it exists
     const cachedRequest = this.inProgressRequestCache.get(paramsKey)
-    if (cachedRequest && !options.forceNewFetch) {
+    const deduplicate = options.deduplicate ?? defaultDeduplicate(params)
+    if (cachedRequest && deduplicate) {
       // if user hasn't explicitly requested a new fetch,
       // return the in-progress fetch promise
-      return cachedRequest.fetchPromise as Promise<TResponseBody>
+      return cachedRequest.requestPromise as Promise<TResponseBody>
     }
 
     const id = Symbol()
-    const fetchPromise = this.createGetPromise(params, options, id)
+    const fetchPromise = this.createRequestPromise(params, options, id)
 
-    this.inProgressRequestCache.set(paramsKey, {id, fetchPromise})
+    this.inProgressRequestCache.set(paramsKey, {
+      id,
+      requestPromise: fetchPromise
+    })
 
     return fetchPromise as Promise<TResponseBody>
   }
 
-  private async createGetPromise(
-    params: IApiRequestParams,
+  private async createRequestPromise(
+    params: ApiRequestParams,
     options: ApiRequestOptions,
     id: symbol
   ): Promise<ResponseBody | null> {
@@ -131,7 +130,7 @@ export class ApiRequestManager {
    * Configuring an error handler to be called on error
    */
   onReceivedResponseBody = (
-    listener: (params: IApiRequestParams, responseBody: ResponseBody) => void
+    listener: (params: ApiRequestParams, responseBody: ResponseBody) => void
   ) => {
     return createSubscription(
       this.emitter,
@@ -150,7 +149,7 @@ export class ApiRequestManager {
   /**
    * Returns `true` if a `GET` request matches params
    */
-  requestInProgress = (params: IApiRequestParams): boolean => {
+  requestInProgress = (params: ApiRequestParams): boolean => {
     return this.inProgressRequestCache.has(getParamsId(params))
   }
 
@@ -166,9 +165,10 @@ export class ApiRequestManager {
   }
 
   private fetchResponseBody = async (
-    params: IApiRequestParams,
+    params: ApiRequestParams,
     options: ApiRequestOptions
   ): Promise<ResponseBody | null> => {
+    const {method = DEFAULT_REQUEST_METHOD} = params
     const {fetchPolicy = DEFAULT_FETCH_POLICY} = options
     try {
       let headers = new Headers(this.defaultHeaders)
@@ -179,7 +179,7 @@ export class ApiRequestManager {
 
       let body: BodyInit | undefined
 
-      if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(params.method)) {
+      if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(method)) {
         const paramBody = (params as {body: RequestBody}).body
 
         if (
@@ -198,7 +198,7 @@ export class ApiRequestManager {
       }
 
       const response = await this.requestFetcher.getResponse({
-        method: params.method,
+        method,
         url: `${this.baseUrl}${params.url}`,
         body,
         headers,
@@ -225,4 +225,8 @@ export class ApiRequestManager {
       throw error
     }
   }
+}
+
+function defaultDeduplicate(params: ApiRequestParams) {
+  return params.method === 'GET' ? true : false
 }
