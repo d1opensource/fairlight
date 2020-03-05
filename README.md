@@ -17,7 +17,7 @@ const [{data, loading, error}] = useApiQuery({url: `/users/${id}`})
 - 📥 Parses response bodies of any data type (`'json'`, `'blob'`, `'text'`)
 - 🗞 Compatible with almost any REST API
 - 🌳 Exports tree-shakable ES modules
-- ![TS](./typescript.svg?sanitize) Designed with full [Typescript](https://www.typescriptlang.org/) support
+- ![TS](./typescript.svg?sanitize=true) Designed with full [Typescript](https://www.typescriptlang.org/) support
 
 **Contents**:
 
