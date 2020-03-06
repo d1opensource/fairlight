@@ -59,6 +59,9 @@ export class Api {
     )
   }
 
+  /**
+   * Returns the `baseUrl` which was set via the constructor.
+   */
   get baseUrl() {
     return this.requestManager.baseUrl
   }
