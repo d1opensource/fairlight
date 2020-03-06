@@ -30,6 +30,10 @@ it('applies the base URL to requests', async () => {
   expect(request.url).toEqual('http://test.com/endpoint')
 })
 
+it('exposes the base url', () => {
+  expect(api.baseUrl).toEqual('http://test.com')
+})
+
 describe('defaultFetchPolicy', () => {
   it('defaults to fetch-first', () => {
     expect(new Api().defaultFetchPolicy).toEqual('fetch-first')

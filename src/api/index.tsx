@@ -59,6 +59,10 @@ export class Api {
     )
   }
 
+  get baseUrl() {
+    return this.requestManager.baseUrl
+  }
+
   /**
    * Makes an API request
    */

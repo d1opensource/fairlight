@@ -46,6 +46,7 @@ const [{data, loading, error}] = useApiQuery({url: `/users/${id}`})
   - [`RestEndpoints`](#restendpoints)
   - [`Api`](#api)
     - [`Constructor`](#constructor)
+    - [`baseUrl`](#baseurl)
     - [`request(params: object, opts?: object)`](#requestparams-object-opts-object)
     - [`requestInProgress(params: object)`](#requestinprogressparams-object)
     - [`writeCachedResponse(params: object, responseBody?: Blob | object | string)`](#writecachedresponseparams-object-responsebody-blob--object--string)
@@ -864,6 +865,10 @@ Constructor fields:
 | `parseResponseJson?(body: object): object`                                                               | When provided, all JSON response bodies will be run through this transformation function before returning the response. |
 
 </details>
+
+#### `baseUrl`
+
+The `baseUrl` that was set via the `Api` constructor.
 
 #### `request(params: object, opts?: object)`
 
