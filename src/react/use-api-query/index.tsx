@@ -71,7 +71,10 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
     dontReinitialize?: boolean
   } = {}
 ): [UseApiQueryData<TResponseBody>, UseApiQueryActions<TResponseBody>] {
-  const {api, defaultFetchPolicy} = useContext(ApiContext)
+  const {
+    api,
+    defaultFetchPolicies: {useApiQuery: defaultFetchPolicy}
+  } = useContext(ApiContext)
   const fetchPolicy = opts.fetchPolicy || defaultFetchPolicy
   const paramsId = params && getParamsId(params)
   const [state, dispatch] = useReducer(useApiQueryReducer, null, () => ({

@@ -46,6 +46,8 @@ const [{data, loading, error}] = useApiQuery({url: `/users/${id}`})
   - [`RestEndpoints`](#restendpoints)
   - [`Api`](#api)
     - [`Constructor`](#constructor)
+    - [`baseUrl`](#baseurl)
+    - [`defaultFetchPolicy`](#defaultfetchpolicy)
     - [`request(params: object, opts?: object)`](#requestparams-object-opts-object)
     - [`requestInProgress(params: object)`](#requestinprogressparams-object)
     - [`writeCachedResponse(params: object, responseBody?: Blob | object | string)`](#writecachedresponseparams-object-responsebody-blob--object--string)
@@ -242,11 +244,11 @@ Here are the possible fetch policies:
 | `cache-only`      | The request will _only_ read from the cache and never fetch from the server.<br />If the data does not exist, it will throw an `ApiCacheMissError`.                                                                                                                                                                                                                                                                |
 | `cache-and-fetch` | The request will simultaneously read from the cache and fetch from the server.<br />If the data is in the cache, the promise will resolve with the cached results. Once the fetch resolves, it will update the cache in the background and emit an event to notify listeners of the update.<br />If the data is not in the cache, the promise will resolve with the result of the fetch and then update the cache. |
 
-If you'd like to override the default `fetchPolicy` for `useApiQuery`, you can pass a `defaultFetchPolicy` prop to `<ApiProvider />`:
+If you'd like to override the default `fetchPolicy` for `useApiQuery`, you can pass a `defaultFetchPolicies` prop to `<ApiProvider />`:
 
 ```jsx
 const App = () => (
-  <ApiProvider api={api} defaultFetchPolicy='fetch-first'>
+  <ApiProvider api={api} defaultFetchPolicies={{useApiQuery: 'fetch-first'}}>
     {/* Render app */}
   </ApiProvider>
 )
@@ -666,7 +668,12 @@ import {ApiProvider} from 'fairlight'
 const api = new Api({baseUrl: 'http://your-api.com/api'})
 
 const App = () => (
-  <ApiProvider api={api} defaultFetchPolicy='cache-and-fetch'>
+  <ApiProvider
+    api={api}
+    defaultFetchPolicies={{
+      useApiQuery: 'cache-and-fetch'
+    }}
+  >
     {/* render app here */}
   </ApiProvider>
 )
@@ -678,10 +685,16 @@ const App = () => (
 
 `props`:
 
-| Field                                                                                                    | Description                                                                                     |
-| -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `api: Api`                                                                                               | `Api` instance to provide to your app.                                                          |
-| `defaultFetchPolicy?: 'no-cache' \| 'cache-first' \| 'fetch-first' \| 'cache-only' \| 'cache-and-fetch'` | Sets the default `fetchPolicy` for all `useApiQuery()` requests. Defaults to `cache-and-fetch`. |
+| Field                          | Description                                                                      |
+| ------------------------------ | -------------------------------------------------------------------------------- |
+| `api: Api`                     | `Api` instance to provide to your app.                                           |
+| `defaultFetchPolicies: object` | Sets the default `fetchPolicy` to use for hooks. See below for possible options. |
+
+`defaultFetchPolicies` fields:
+
+| Field                                                                                            | Description                                                                                                     |
+| ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| `useApiQuery: 'no-cache' \| 'cache-first' \| 'fetch-first' \| 'cache-only' \| 'cache-and-fetch'` | The `fetchPolicy` to use by default for the `useApiQuery` hook. Defaults to `cache-and-fetch` if not specified. |
 
 </details>
 
@@ -864,6 +877,14 @@ Constructor fields:
 | `parseResponseJson?(body: object): object`                                                               | When provided, all JSON response bodies will be run through this transformation function before returning the response. |
 
 </details>
+
+#### `baseUrl`
+
+The `baseUrl` that was set via the `Api` constructor.
+
+#### `defaultFetchPolicy`
+
+The `defaultFetchPolicy` that was set via the `Api` constructor.
 
 #### `request(params: object, opts?: object)`
 
