@@ -31,7 +31,7 @@ export interface ApiProviderProps {
    * Sets the default `fetchPolicy` which is used by `useApiQuery`
    * if no `fetchPolicy` is provided to the hook.
    */
-  defaultFetchPolicy?: Partial<ApiRequestFetchPolicy>
+  defaultFetchPolicies?: Partial<ApiProviderDefaultFetchPolicies>
 }
 
 export const ApiProvider: React.FC<ApiProviderProps> = function ApiProvider(
@@ -42,7 +42,9 @@ export const ApiProvider: React.FC<ApiProviderProps> = function ApiProvider(
       value={{
         api: props.api,
         defaultFetchPolicies: {
-          useApiQuery: props.defaultFetchPolicy || DEFAULT_QUERY_FETCH_POLICY
+          useApiQuery:
+            props.defaultFetchPolicies?.useApiQuery ||
+            DEFAULT_QUERY_FETCH_POLICY
         }
       }}
     >

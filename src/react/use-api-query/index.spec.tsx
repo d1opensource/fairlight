@@ -179,7 +179,10 @@ describe('cache', () => {
     const {waitForNextUpdate} = renderHook(() => useApiQuery(params), {
       wrapper: function Wrapper({children}) {
         return (
-          <ApiProvider api={api} defaultFetchPolicy={defaultFetchPolicy}>
+          <ApiProvider
+            api={api}
+            defaultFetchPolicies={{useApiQuery: defaultFetchPolicy}}
+          >
             {children}
           </ApiProvider>
         )
