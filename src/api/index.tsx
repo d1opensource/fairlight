@@ -1,6 +1,6 @@
 import EventEmitter from 'eventemitter3'
 
-import {DEFAULT_FETCH_POLICY, READ_CACHE_POLICIES} from './constants'
+import {READ_CACHE_POLICIES} from './constants'
 import {ApiCacheMissError} from './errors'
 import {GenericCache} from './generic-cache'
 import {createSubscription, genCacheUpdateEvent, getParamsId} from './lib'
@@ -18,8 +18,6 @@ import {
 const ERROR_EVENT = 'error'
 
 export class Api {
-  defaultFetchPolicy: ApiRequestFetchPolicy
-
   private responseBodyCache = new GenericCache<ResponseBody>()
 
   private requestManager: ApiRequestManager
@@ -52,7 +50,6 @@ export class Api {
     } = {}
   ) {
     this.requestManager = new ApiRequestManager(params)
-    this.defaultFetchPolicy = params.defaultFetchPolicy || DEFAULT_FETCH_POLICY
     this.requestManager.onReceivedResponseBody(this.writeCachedResponse)
     this.requestManager.onError((error) =>
       this.emitter.emit(ERROR_EVENT, error)
@@ -67,13 +64,20 @@ export class Api {
   }
 
   /**
+   * Returns the `baseUrl` which was set via the constructor.
+   */
+  get defaultFetchPolicy() {
+    return this.requestManager.defaultFetchPolicy
+  }
+
+  /**
    * Makes an API request
    */
   request = <TResponseBody extends ResponseBody>(
     params: ApiRequestParams<ApiRequestMethod, TResponseBody>,
     options: ApiRequestOptions = {}
   ): Promise<TResponseBody> => {
-    const {fetchPolicy = DEFAULT_FETCH_POLICY} = options
+    const {fetchPolicy = this.defaultFetchPolicy} = options
 
     if (!READ_CACHE_POLICIES.includes(fetchPolicy)) {
       return this.requestManager.getResponseBody<TResponseBody>(
