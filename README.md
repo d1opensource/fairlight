@@ -335,14 +335,14 @@ friendsQueryActions.refetch()
 For example, suppose we have a query to get a user:
 
 ```tsx
-const [user] = useApiQuery(userEndpoints.findById(1))
+const [user] = useApiQuery(UserEndpoints.findById(1))
 ```
 
-Now, suppose we also have a form that updates a user. Once this succeeds, we can update the data for our above query using the response for the update request:
+Now, suppose we also have a form that updates a user. This API request happens to returns the updated user, so we can use `setData` to update our `useApiQuery` data with the most up-to-date user.
 
 ```tsx
 const api = useApi()
-const [user, userQueryActions] = useApiQuery(userEndpoints.findById(1))
+const [user, userQueryActions] = useApiQuery(UserEndpoints.findById(1))
 
 const handleSubmit = async (values) => {
   try {
