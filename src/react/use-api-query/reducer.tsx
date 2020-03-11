@@ -63,11 +63,19 @@ export const useApiQueryReducer: Reducer<
       }
 
       return prev
-    case getType(useApiQueryActions.setData):
+    case getType(useApiQueryActions.setData): {
+      if (typeof action.payload === 'function') {
+        return {
+          ...prev,
+          data: action.payload(prev.data)
+        }
+      }
+
       return {
         ...prev,
         data: action.payload
       }
+    }
     default:
       return prev
   }

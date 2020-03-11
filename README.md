@@ -30,6 +30,7 @@ const [{data, loading, error}] = useApiQuery({url: `/users/${id}`})
     - [How request cache keys are determined](#how-request-cache-keys-are-determined)
   - [Re-fetching a query](#re-fetching-a-query)
   - [Dependent queries](#dependent-queries)
+  - [Manually updating query data](#manually-updating-query-data)
   - [Custom response body parsing](#custom-response-body-parsing)
   - [Custom query string serialization](#custom-query-string-serialization)
   - [Setting default headers (ie. an auth token) for all requests](#setting-default-headers-ie-an-auth-token-for-all-requests)
@@ -327,6 +328,38 @@ const [friends, friendsQueryActions] = useApiQuery(
 friendsQueryActions.refetch()
 ```
 
+### Manually updating query data
+
+`useApiQuery` returns a `setData` method which allows you to manually set the data stored by the hook (similar to [react#useState](https://reactjs.org/docs/hooks-reference.html#functional-updates)'s functional updates).
+
+For example, suppose we have a query to get a user:
+
+```tsx
+const [user] = useApiQuery(userEndpoints.findById(1))
+```
+
+Now, suppose we also have a form that updates a user. Once this succeeds, we can update the data for our above query using the response for the update request:
+
+```tsx
+const api = useApi()
+const [user, userQueryActions] = useApiQuery(userEndpoints.findById(1))
+
+const handleSubmit = async (values) => {
+  try {
+    const updatedUser = await api.request(
+      UserEndpoints.partialUpdate(1, values)
+    )
+
+    userQueryActions.setData(updatedUser)
+    // ↑↑ this updates `user.data`
+  } catch (error) {
+    // etc
+  }
+}
+```
+
+Note: if `fetchPolicy` is not `no-cache`, this will persist directly to the response cache.
+
 ### Custom response body parsing
 
 By default, responses will attempt to be parsed to `'json'`, `'text'`, or `'blob'` formats using the `Content-Type` header on the response:
@@ -619,6 +652,11 @@ userQueryActions.refetch()
 
 // to imperatively set the data:
 userQueryActions.setData({id: 1, name: 'Jane'})
+// setting the data using a function setter:
+userQueryActions.setData((prev) => ({
+  ...prev,
+  name: 'Jane'
+}))
 ```
 
 </details>
@@ -649,10 +687,10 @@ Returns `[queryData, queryActions]`:
 
 `queryActions` fields:
 
-| Field                                                                         | Description                                                                                                                                                                                                   |
-| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `refetch: (opts?: { deduplicate?: boolean, reinitialize?: boolean }) => void` | When called, triggers a data refetch. You can manually override `deduplicate`, which uses the value passed to the hook by default. You can also set `reinitialize: true` to clear `data` (`false` by default) |
-| `setData: (responseBody: object \| Blob \| string)`                           | Manually sets the response `data` of the hook. If `fetchPolicy` is not set to `no-cache`, it will store the response body in the cache as well.                                                               |
+| Field                                                                                          | Description                                                                                                                                                                                                                                             |
+| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `refetch: (opts?: { deduplicate?: boolean, reinitialize?: boolean }) => void`                  | When called, triggers a data refetch. You can manually override `deduplicate`, which uses the value passed to the hook by default. You can also set `reinitialize: true` to clear `data` (`false` by default)                                           |
+| `setData: (responseBody: object \| Blob \| string \| ((prev) => object \| Blob \| string \|))` | Manually sets the response `data` of the hook.<br />If `fetchPolicy` is not set to `no-cache`, it will store the response body in the cache as well.<br />If a function is passed to `setData`, the data can be set as a function of its previous data. |
 
 </details>
 

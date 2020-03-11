@@ -48,5 +48,5 @@ export const useApiQueryActions = {
   /**
    * The `data` should be set manually.
    */
-  setData: createStandardAction('SET_DATA')<any>()
+  setData: createStandardAction('SET_DATA')<any | ((prev: any) => any)>()
 }

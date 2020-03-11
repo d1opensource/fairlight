@@ -30,7 +30,9 @@ export interface UseApiQueryActions<TResponseBody extends ResponseBody> {
    * This is useful if you mutate the data via a separate API call, and then and want to manually
    * update the data in this call.
    */
-  setData: (data: TResponseBody) => void
+  setData: (
+    data: TResponseBody | ((prev: TResponseBody | null) => TResponseBody)
+  ) => void
   /**
    * Performs a manual API fetch (over the network).
    *
@@ -173,7 +175,17 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
         } else {
           // write to the cache, which will in turn
           // notify the subscription and update `state.data`
-          api.writeCachedResponse(params, data)
+
+          if (typeof data === 'function') {
+            // function setter
+            const prev = api.readCachedResponse(params)
+            api.writeCachedResponse(
+              params,
+              (data as (prev: TResponseBody | null) => TResponseBody)(prev)
+            )
+          } else {
+            api.writeCachedResponse(params, data)
+          }
         }
       },
 
