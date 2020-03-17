@@ -15,7 +15,6 @@ afterEach(cleanup)
 
 beforeEach(() => {
   api = {
-    defaultFetchPolicy: 'no-cache',
     onCacheUpdate: jest.fn(() => () => null),
     readCachedResponse: jest.fn(),
     writeCachedResponse: jest.fn(),

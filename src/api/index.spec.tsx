@@ -34,18 +34,6 @@ it('exposes the base url', () => {
   expect(api.baseUrl).toEqual('http://test.com')
 })
 
-describe('defaultFetchPolicy', () => {
-  it('defaults to fetch-first', () => {
-    expect(new Api().defaultFetchPolicy).toEqual('fetch-first')
-  })
-
-  it('can be overridden', () => {
-    expect(
-      new Api({defaultFetchPolicy: 'no-cache'}).defaultFetchPolicy
-    ).toEqual('no-cache')
-  })
-})
-
 describe('request headers', () => {
   it('applies default headers', async () => {
     fetchMock.mockResponseOnce(JSON.stringify({num: 12345}), {

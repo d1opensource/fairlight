@@ -49,7 +49,6 @@ const [{data, loading, error}] = useApiQuery({url: `/users/${id}`})
   - [`Api`](#api)
     - [`Constructor`](#constructor)
     - [`baseUrl`](#baseurl)
-    - [`defaultFetchPolicy`](#defaultfetchpolicy)
     - [`request(params: object, opts?: object)`](#requestparams-object-opts-object)
     - [`requestInProgress(params: object)`](#requestinprogressparams-object)
     - [`writeCachedResponse(params: object, responseBody?: Blob | object | string)`](#writecachedresponseparams-object-responsebody-blob--object--string)
@@ -256,19 +255,7 @@ const App = () => (
 )
 ```
 
-Similarly to `useApiQuery`, you can pass a `fetchPolicy` when calling `api.request` directly:
-
-```jsx
-const users = await api.request(UserEndpoints.list(), {
-  fetchPolicy: 'cache-only'
-})
-```
-
-`api.request` has a default `fetchPolicy` of `fetch-first`, but can be overridden in the `Api` constructor:
-
-```jsx
-const api = new Api({defaultFetchPolicy: 'no-cache'})
-```
+Note that calling `api.request()` directly always defaults `fetchPolicy` to `'no-cache'`, but you can override per-request if you'd like to interact with the cache.
 
 #### Using the cache directly
 
@@ -925,7 +912,6 @@ import {Api} from 'fairlight'
 
 const api = new Api({
   baseUrl: 'http://your-api.com/api',
-  defaultFetchPolicy: 'fetch-first',
   serializeRequestJson: (body) => camelize(body),
   serializeRequestJson: (body) => snakify(body)
 })
@@ -937,22 +923,17 @@ const api = new Api({
 
 Constructor fields:
 
-| Field                                                                                                    | Description                                                                                                             |
-| -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `baseUrl?: string`                                                                                       | Base URL of the API. This will prefix all requests.                                                                     |
-| `defaultFetchPolicy?: 'no-cache' \| 'cache-first' \| 'fetch-first' \| 'cache-only' \| 'cache-and-fetch'` | Sets the default `fetchPolicy` for all `api.request` calls. Defaults to `fetch-first`.                                  |
-| `serializeRequestJson?(body: object): object`                                                            | When provided, all JSON request bodies will be run through this transformation function before the API request.         |
-| `parseResponseJson?(body: object): object`                                                               | When provided, all JSON response bodies will be run through this transformation function before returning the response. |
+| Field                                         | Description                                                                                                             |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `baseUrl?: string`                            | Base URL of the API. This will prefix all requests.                                                                     |
+| `serializeRequestJson?(body: object): object` | When provided, all JSON request bodies will be run through this transformation function before the API request.         |
+| `parseResponseJson?(body: object): object`    | When provided, all JSON response bodies will be run through this transformation function before returning the response. |
 
 </details>
 
 #### `baseUrl`
 
 The `baseUrl` that was set via the `Api` constructor.
-
-#### `defaultFetchPolicy`
-
-The `defaultFetchPolicy` that was set via the `Api` constructor.
 
 #### `request(params: object, opts?: object)`
 
