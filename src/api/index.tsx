@@ -138,8 +138,10 @@ export class Api {
    */
   readCachedResponse = <TResponseBody extends ResponseBody>(
     params: ApiRequestParams<ApiRequestMethod, TResponseBody>
-  ): TResponseBody => {
-    return this.responseBodyCache.get(getParamsId(params)) as TResponseBody
+  ): TResponseBody | null => {
+    return this.responseBodyCache.get(
+      getParamsId(params)
+    ) as TResponseBody | null
   }
 
   /**

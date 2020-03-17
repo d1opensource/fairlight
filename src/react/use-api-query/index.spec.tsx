@@ -573,6 +573,47 @@ describe('setData', () => {
     })
   })
 
+  it('accepts a function setter', async () => {
+    const initialData = {name: 'Test'}
+    ;(api.request as jest.Mock).mockResolvedValue(initialData)
+    ;(api.writeCachedResponse as jest.Mock).mockClear()
+
+    const {result, waitForNextUpdate} = renderHook(
+      () =>
+        useApiQuery(
+          {method: 'GET', url: '/endpoint'},
+          {fetchPolicy: 'no-cache'}
+        ),
+      {wrapper}
+    )
+
+    // eslint-disable-next-line
+    await waitForNextUpdate()
+
+    expect(result.current[0]).toEqual({
+      data: initialData,
+      loading: false,
+      error: null
+    })
+
+    const nextData = {next: 'data'}
+
+    act(() => {
+      result.current[1].setData((prev: object) => ({...prev, ...nextData}))
+    })
+
+    expect(api.writeCachedResponse).not.toBeCalled()
+
+    expect(result.current[0]).toEqual({
+      data: {
+        ...initialData,
+        ...nextData
+      },
+      loading: false,
+      error: null
+    })
+  })
+
   it('writes to the cache if fetchPolicy is not no-cache', async () => {
     const params: ApiRequestParams = {method: 'GET', url: '/endpoint'}
     const response = {name: 'Test'}
@@ -607,6 +648,48 @@ describe('setData', () => {
       })
 
       expect(api.writeCachedResponse).toBeCalledWith(params, nextData)
+    }
+  })
+
+  it('accepts a function setter to write to the cache if fetchPolicy is not no-cache', async () => {
+    const params: ApiRequestParams = {method: 'GET', url: '/endpoint'}
+    const initialData = {name: 'Test'}
+    ;(api.request as jest.Mock).mockResolvedValue(initialData)
+    const fetchPolicies: ApiRequestFetchPolicy[] = [
+      'cache-first',
+      'cache-only',
+      'cache-and-fetch',
+      'fetch-first'
+    ]
+
+    for (const fetchPolicy of fetchPolicies) {
+      ;(api.writeCachedResponse as jest.Mock).mockClear()
+      ;(api.readCachedResponse as jest.Mock).mockReturnValue(undefined)
+
+      const {result, waitForNextUpdate} = renderHook(
+        () => useApiQuery(params, {fetchPolicy}),
+        {wrapper}
+      )
+
+      // eslint-disable-next-line
+      await waitForNextUpdate()
+
+      expect(result.current[0]).toEqual({
+        data: initialData,
+        loading: false,
+        error: null
+      })
+      ;(api.readCachedResponse as jest.Mock).mockReturnValue(initialData)
+      const nextData = {next: 'data'}
+
+      act(() => {
+        result.current[1].setData((prev: object) => ({...prev, ...nextData}))
+      })
+
+      expect(api.writeCachedResponse).toBeCalledWith(params, {
+        ...initialData,
+        ...nextData
+      })
     }
   })
 })
