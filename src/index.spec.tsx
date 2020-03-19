@@ -9,6 +9,7 @@ test('lib exports', () => {
     'ApiError',
     'useApi',
     'useApiQuery',
+    'useApiMutation',
     'withApi',
     'ApiContext',
     'ApiProvider',
