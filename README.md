@@ -43,6 +43,7 @@ const [{data, loading, error}] = useApiQuery({url: `/users/${id}`})
 - [Feature Roadmap](#feature-roadmap)
 - [API Documentation](#api-documentation)
   - [`useApiQuery(params: object, opts?: object)`](#useapiqueryparams-object-opts-object)
+  - [`useApiMutation(params: object)`](#useapimutationparams-object)
   - [`ApiProvider`](#apiprovider)
   - [`HttpEndpoints`](#httpendpoints)
   - [`RestEndpoints`](#restendpoints)
@@ -184,40 +185,38 @@ const MyComponent = (props) => {
 }
 ```
 
-To make one-off requests (ie. form submissions, deletions, etc), you can use the `Api` client instance directly:
+To create an event handler for form submissions, deletions, etc., use the `useApiMutation` hook.
+
+The hook takes a curried mutation handler which is passed the [`api`](#api) for making queries. It returns a mutation function and a `mutating` loading flag which you can use for a loading state.
 
 ```jsx
 import React, {useState} from 'react'
-import {useApi} from 'fairlight'
+import {useApiMutation} from 'fairlight'
 
 import {UserEndpoints} from 'my-app/endpoints'
 
-const DeleteUser = (props) => {
-  const api = useApi()
-  const [deleting, setDeleting] = useState(false)
-
-  const handleDelete = async () => {
-    setDeleting(true)
-
-    try {
-      await api.request(UserEndpoints.destroy(props.userId))
-      // navigate to a different page, etc.
-    } catch (error) {
-      // handle error
-    } finally {
-      setDeleting(false)
-    }
-  }
+const CreateUserForm = (props) => {
+  const [createUser, {mutating: creatingUser}] = useApiMutation({
+    mutation: (firstName: string, lastName: string) => async (api) => {
+      await api.request(UserEndpoints.create({firstName, lastName}))
+    },
+    onError: (error) => console.error(error)
+  })
 
   return (
     <>
-      <button type='button' onClick={handleDeleteUser} disabled={deleting}>
-        Delete User
-      </button>
+      {creatingUser && <LoadingSpinner />}
+      <CreateUserForm
+        onSubmit={(firstName, lastName) => {
+          createUser(firstName, lastName)
+        }}
+      />
     </>
   )
 }
 ```
+
+_(`useApiMutation` API documentation is [here](#useapimutationparams-object))_
 
 ## Guide
 
@@ -708,6 +707,46 @@ Returns `[queryData, queryActions]`:
 
 </details>
 
+### `useApiMutation(params: object)`
+
+<details><summary>Example</summary>
+
+```jsx
+import {useApiQuery} from 'fairlight'
+
+const [createUser, {creating: creatingUser}] = useApiMutation({
+  mutation: (firstName: string, lastName: string) => async (api) => {
+    await api.request(UserEndpoints.create({firstName, lastName}))
+  },
+  onError: (error) => console.error(error)
+})
+```
+
+</details>
+
+<details><summary>Details</summary>
+
+`params` fields:
+
+| Field      | Description                                                                                             |
+| ---------- | ------------------------------------------------------------------------------------------------------- |
+| `mutation` | The mutation function. The return value is called with an object containing all [`api`](#api) methods.  |
+| `onError`  | Invoked if the mutation returns a rejected promise. This eliminates the need for a `try`/`catch` block. |
+
+Returns `[mutate, mutationData]`:
+
+`mutate` function:
+
+Invokes the mutation. This will call your provided `mutation` function with the `api` helpers. The `mutating` flag will be set to `true` while the mutation is occurring, and `false` once it completes.
+
+`mutationData` fields:
+
+| Field               | Description                                    |
+| ------------------- | ---------------------------------------------- |
+| `mutating: boolean` | `true` if a mutation is currently in progress. |
+
+</details>
+
 ### `ApiProvider`
 
 Provides an `Api` instance to a React app.
@@ -725,6 +764,9 @@ const App = () => (
     defaults={{
       useApiQuery: {
         fetchPolicy: 'cache-and-fetch'
+      },
+      useApiMutation: {
+        fetchPolicy: 'fetch-first'
       }
     }}
   >
@@ -746,10 +788,11 @@ const App = () => (
 
 `defaults` fields:
 
-| Field                                                                                                         | Description                                                                                                     |
-| ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `useApiQuery.fetchPolicy?: 'no-cache' \| 'cache-first' \| 'fetch-first' \| 'cache-only' \| 'cache-and-fetch'` | The `fetchPolicy` to use by default for the `useApiQuery` hook. Defaults to `cache-and-fetch` if not specified. |
-| `useApiQuery.useErrorBoundary?: boolean`                                                                      | The `useErrorBoundary` to use by default for the `useApiQuery` hook. Defaults to `true` if not specified.       |
+| Field                                                                                                             | Description                                                                                                                                     |
+| ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `useApiQuery.fetchPolicy?: 'no-cache' \| 'cache-first' \| 'fetch-first' \| 'cache-only' \| 'cache-and-fetch'`     | The `fetchPolicy` to use by default for the `useApiQuery` hook. Defaults to `cache-and-fetch` if not specified.                                 |
+| `useApiQuery.useErrorBoundary?: boolean`                                                                          | The `useErrorBoundary` to use by default for the `useApiQuery` hook. Defaults to `true` if not specified.                                       |
+| `useMutationQuery.fetchPolicy: 'no-cache' \| 'cache-first' \| 'fetch-first' \| 'cache-only' \| 'cache-and-fetch'` | The `fetchPolicy` to use by default for `api.request` calls within `useApiMutation` mutation handlers. Defaults to `no-cache` if not specified. |
 
 </details>
 
