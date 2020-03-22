@@ -3,9 +3,15 @@ import EventEmitter from 'eventemitter3'
 import {DEFAULT_FETCH_POLICY, DEFAULT_REQUEST_METHOD} from '../constants'
 import {ApiError} from '../errors'
 import {GenericCache} from '../generic-cache'
-import {applyHeaders, createSubscription, getParamsId} from '../lib'
+import {
+  applyHeaders,
+  cloneHeaders,
+  createSubscription,
+  getParamsId
+} from '../lib'
 import {ApiRequestFetcher} from '../request-fetcher'
 import {
+  ApiHeaders,
   ApiParseResponseJson,
   ApiRequestFetchPolicy,
   ApiRequestMethod,
@@ -48,7 +54,7 @@ export class ApiRequestManager {
 
   private parseResponseJson: ApiParseResponseJson
 
-  private defaultHeaders = new Headers()
+  private defaultHeaders: ApiHeaders = {}
 
   private inProgressRequestCache = new GenericCache<{
     id: symbol
@@ -170,7 +176,7 @@ export class ApiRequestManager {
    * @param value Header value
    */
   setDefaultHeader = (key: string, value: string): void => {
-    this.defaultHeaders.set(key, value)
+    this.defaultHeaders = applyHeaders(this.defaultHeaders, {[key]: value})
   }
 
   private fetchResponseBody = async (
@@ -221,8 +227,8 @@ export class ApiRequestManager {
    */
   private getRequestHeadersAndBody(
     params: ApiRequestParams
-  ): {headers: Headers; body: BodyInit | undefined} {
-    let headers = new Headers(this.defaultHeaders)
+  ): {headers: ApiHeaders; body: BodyInit | undefined} {
+    let headers: ApiHeaders = cloneHeaders(this.defaultHeaders)
 
     if (params.headers) {
       headers = applyHeaders(headers, params.headers)
@@ -247,7 +253,7 @@ export class ApiRequestManager {
         body = JSON.stringify(
           this.serializeRequestJson(paramBody as object, params)
         )
-        headers.set('Content-Type', 'application/json')
+        headers['content-type'] = 'application/json'
       } else {
         body = paramBody as BodyInit
       }

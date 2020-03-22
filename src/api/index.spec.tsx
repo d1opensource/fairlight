@@ -17,8 +17,8 @@ it('does not require a base URL or method to make a GET request', async () => {
     headers: {'content-type': 'application/json'}
   })
   await new Api().request({url: 'http://some_site.com/endpoint'})
-  const request = fetchMock.mock.calls[0][0] as Request
-  expect(request.url).toEqual('http://some_site.com/endpoint')
+  const requestUrl = fetchMock.mock.calls[0][0] as string
+  expect(requestUrl).toEqual('http://some_site.com/endpoint')
 })
 
 it('applies the base URL to requests', async () => {
@@ -26,8 +26,8 @@ it('applies the base URL to requests', async () => {
     headers: {'content-type': 'application/json'}
   })
   await api.request({method: 'GET', url: '/endpoint'})
-  const request = fetchMock.mock.calls[0][0] as Request
-  expect(request.url).toEqual('http://test.com/endpoint')
+  const requestUrl = fetchMock.mock.calls[0][0] as string
+  expect(requestUrl).toEqual('http://test.com/endpoint')
 })
 
 it('exposes the base url', () => {
@@ -53,8 +53,8 @@ describe('request headers', () => {
     })
     api.setDefaultHeader('X-Authorization', 'x-token')
     await api.request({method: 'GET', url: '/endpoint'})
-    const request = fetchMock.mock.calls[0][0] as Request
-    expect(request.headers.get('x-authorization')).toEqual('x-token')
+    const request = fetchMock.mock.calls[0][1] as RequestInit
+    expect(request.headers['x-authorization']).toEqual('x-token')
   })
 
   it('applies custom headers', async () => {
@@ -69,9 +69,9 @@ describe('request headers', () => {
         'X-User-Id': '12345'
       }
     })
-    const request = fetchMock.mock.calls[0][0] as Request
-    expect(request.headers.get('x-authorization')).toEqual('x-token')
-    expect(request.headers.get('x-user-id')).toEqual('12345')
+    const request = fetchMock.mock.calls[0][1] as RequestInit
+    expect(request.headers['x-authorization']).toEqual('x-token')
+    expect(request.headers['x-user-id']).toEqual('12345')
   })
 })
 
@@ -85,8 +85,8 @@ describe('request body', () => {
       url: '/endpoint',
       body: 'text-body'
     })
-    const request = fetchMock.mock.calls[0][0] as Request
-    expect(await request.text()).toEqual('text-body')
+    const request = fetchMock.mock.calls[0][1] as RequestInit
+    expect(request.body).toEqual('text-body')
   })
 })
 
@@ -229,8 +229,8 @@ describe('response parsing', () => {
         url: '/endpoint',
         body: {reqId: 'test-id', num: 23456}
       })
-      const request = fetchMock.mock.calls[0][0] as Request
-      expect(await request.json()).toEqual({num: 23456})
+      const request = fetchMock.mock.calls[0][1] as RequestInit
+      expect(request.body).toEqual(JSON.stringify({num: 23456}))
       expect(num).toEqual({resId: 'test-id', num: 12345})
     })
   })

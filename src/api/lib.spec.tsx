@@ -1,4 +1,4 @@
-import {applyHeaders, getParamsId} from './lib'
+import {applyHeaders, cloneHeaders, getParamsId} from './lib'
 import {ApiRequestParams} from './typings'
 
 describe('getParamsId', () => {
@@ -217,22 +217,24 @@ describe('getParamsId', () => {
 })
 
 test('applyHeaders', () => {
-  const prevHeaders = new Headers({'Content-Type': 'application/json'})
+  const prevHeaders = {'content-type': 'application/json'}
   expect(applyHeaders(prevHeaders, {})).not.toBe(prevHeaders) // ensure it doesn't mutate original headers
 
   // no change
   expect(applyHeaders(prevHeaders, {})).toEqual(prevHeaders)
 
   // new header
-  expect(applyHeaders(prevHeaders, {'x-authorization': 'x-token'})).toEqual(
-    new Headers({
-      'Content-Type': 'application/json',
-      'X-Authorization': 'x-token'
-    })
-  )
+  expect(applyHeaders(prevHeaders, {'x-authorization': 'x-token'})).toEqual({
+    'content-type': 'application/json',
+    'x-authorization': 'x-token'
+  })
 
   // override existing header
-  expect(applyHeaders(prevHeaders, {'content-type': 'text/plain'})).toEqual(
-    new Headers({'Content-Type': 'text/plain'})
-  )
+  expect(applyHeaders(prevHeaders, {'content-type': 'text/plain'})).toEqual({
+    'content-type': 'text/plain'
+  })
+})
+
+describe('cloneHeaders', () => {
+  expect(cloneHeaders({})).not.toBe({})
 })

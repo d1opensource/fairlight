@@ -97,7 +97,7 @@ export interface RequestFetcherParams {
   url: string
   method: ApiRequestMethod
   body?: BodyInit
-  headers?: Headers
+  headers?: ApiHeaders
   responseType?: ApiResponseType
   successCodes?: number[]
 }

@@ -26,13 +26,13 @@ function serializeHeaders(paramHeaders?: ApiHeaders): string {
     return ''
   }
 
-  const headers = applyHeaders(new Headers(), paramHeaders)
+  const headers = applyHeaders({}, paramHeaders)
 
   const headerPairs: string[] = []
 
-  headers.forEach((value, key) => {
+  for (const [key, value] of Object.entries(headers)) {
     headerPairs.push(`${key}:${value};`)
-  })
+  }
 
   headerPairs.sort()
 
@@ -58,17 +58,21 @@ function uniqueCodes(codes: number[]): number[] {
 }
 
 /**
- * Given a fetch `Headers` object and ApiHeaders (object or array of key-value pairs),
- * returns a new `Headers` object with the ApiHeaders added to the original `Headers`.
+ * Given an origin ApiHeaders object and ApiHeaders object,
+ * returns a new ApiHeaders object with the new headers applied.
  */
-export function applyHeaders(prevHeaders: Headers, apiHeaders: ApiHeaders) {
-  const headers = new Headers(prevHeaders)
+export function applyHeaders(prevHeaders: ApiHeaders, headers: ApiHeaders) {
+  const nextHeaders = cloneHeaders(prevHeaders)
 
-  for (const key of Object.keys(apiHeaders)) {
-    headers.set(key, apiHeaders[key])
+  for (const key of Object.keys(headers)) {
+    nextHeaders[key.toLowerCase()] = headers[key]
   }
 
-  return headers
+  return nextHeaders
+}
+
+export function cloneHeaders(headers: ApiHeaders): ApiHeaders {
+  return {...headers}
 }
 
 export function genCacheUpdateEvent(
