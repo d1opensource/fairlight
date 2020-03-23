@@ -10,6 +10,18 @@ beforeEach(() => {
   fetchMock.mockClear()
 })
 
+it('parses application/json with charset', async () => {
+  fetchMock.mockResponseOnce(JSON.stringify({num: 12345}), {
+    headers: {'content-type': 'application/json; charset=utf-8'}
+  })
+  expect(
+    await requestFetcher.getResponse({
+      url: 'http://test.com/endpoint',
+      method: 'GET'
+    })
+  ).toEqual({responseBody: {num: 12345}, responseType: 'json'})
+})
+
 it('does not parse the response body if it cant determine the response type', async () => {
   // no content type
   fetchMock.mockResponseOnce(JSON.stringify({num: 12345}), {

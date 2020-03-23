@@ -70,7 +70,7 @@ export class ApiRequestFetcher implements RequestFetcher {
       return null
     }
 
-    if (contentType === 'application/json') {
+    if (contentType.includes('application/json')) {
       return 'json'
     }
 
