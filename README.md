@@ -38,6 +38,7 @@ const [{data, loading, error}] = useApiQuery({url: `/users/${id}`})
   - [Error handling](#error-handling)
   - [Typescript](#typescript)
   - [Usage with Redux](#usage-with-redux)
+  - [Server-side rendering (SSR)](#server-side-rendering-ssr)
 - [Motivation](#motivation)
 - [Comparison to similar libraries](#comparison-to-similar-libraries)
 - [Feature Roadmap](#feature-roadmap)
@@ -627,6 +628,56 @@ function* loadUsers() {
     yield put(userActions.failure(error))
   }
 }
+```
+
+### Server-side rendering (SSR)
+
+This library uses `fetch` internally to make requests, so you'll need to globally polyfill `fetch` on the server. One popular option is [`isomorphic-unfetch`](https://www.npmjs.com/package/isomorphic-unfetch).
+
+---
+
+To make requests on the server (ex. using [`next.js`](https://nextjs.org/)), you can create an `api` instance and make requests with it:
+
+```tsx
+import {Api} from 'fairlight'
+import {UserEndpoints} from 'my-app/endpoints'
+
+const api = new Api()
+
+const UserProfile = (props) => {
+  // We can now use `props.user`
+}
+
+export async function getServerSideProps(context) {
+  const user = await api.request(UserEndpoints.findById(context.params.id))
+  return {props: {user}}
+}
+
+export default UserProfile
+```
+
+If you need to share an `api` instance across your server, you can create an `api` singleton file and import that into each file that needs it.
+
+Note that instances of `useApiQuery` will return a `loading` flag for the initial render, and will _not_ run the request since it's performed in a `useEffect` hook. If you'd like to render data on the server and _also_ trigger a new fetch for the same endpoint using `useApiQuery`, you can pass `initialData` to the hook using the props passed by the server fetch:
+
+```tsx
+import {Api} from 'fairlight'
+import {UserEndpoints} from 'my-app/endpoints'
+
+const api = new Api()
+
+const UserProfile = (props) => {
+  const [user] = useApiQuery(UserEndpoints.findById(user.id), {
+    initialData: props.user
+  })
+}
+
+export async function getServerSideProps(context) {
+  const user = await api.request(UserEndpoints.findById(context.params.id))
+  return {props: {user}}
+}
+
+export default UserProfile
 ```
 
 ## Motivation
