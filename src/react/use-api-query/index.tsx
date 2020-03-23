@@ -27,7 +27,7 @@ export * from './typings'
  */
 export function useApiQuery<TResponseBody extends ResponseBody>(
   params: ApiRequestParams<ApiRequestMethod, TResponseBody> | FalsyValue,
-  opts: UseApiQueryOptions = {}
+  opts: UseApiQueryOptions<TResponseBody> = {}
 ): [UseApiQueryData<TResponseBody>, UseApiQueryActions<TResponseBody>] {
   const {
     api,
@@ -76,6 +76,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
           requestId,
           paramsId,
           fetchPolicy,
+          initialData: opts.initialData,
           cachedData,
           dontReinitialize: opts.dontReinitialize
         })

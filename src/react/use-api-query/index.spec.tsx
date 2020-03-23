@@ -738,3 +738,29 @@ describe('setData', () => {
     }
   })
 })
+
+it('allows initialData to be set', async () => {
+  const response = {name: 'Test'}
+  ;(api.request as jest.Mock).mockResolvedValue(response)
+
+  const initialData = {name: 'Initial'}
+
+  const {result, waitForNextUpdate} = renderHook(
+    () => useApiQuery({method: 'GET', url: '/endpoint'}, {initialData}),
+    {wrapper}
+  )
+
+  expect(result.current[0]).toEqual({
+    data: initialData,
+    loading: true,
+    error: null
+  })
+
+  await waitForNextUpdate()
+
+  expect(result.current[0]).toEqual({
+    data: response,
+    loading: false,
+    error: null
+  })
+})

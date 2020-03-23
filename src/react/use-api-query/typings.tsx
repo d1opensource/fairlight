@@ -55,7 +55,9 @@ export interface UseApiQueryActions<TResponseBody extends ResponseBody> {
   refetch: UseApiQueryRefetch
 }
 
-export interface UseApiQueryOptions {
+export interface UseApiQueryOptions<
+  TResponseBody extends ResponseBody = ResponseBody
+> {
   /**
    * Specifies how the request interacts with the cache
    */
@@ -83,6 +85,12 @@ export interface UseApiQueryOptions {
    * Defaults to `false`, unless overridden via `ApiProvider#defaults`
    */
   useErrorBoundary?: boolean
+
+  /**
+   * When set, initializes initial `data` to this value
+   * instead of `null`
+   */
+  initialData?: TResponseBody
 }
 
 export type FalsyValue = '' | 0 | false | undefined | null
