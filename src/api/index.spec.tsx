@@ -114,6 +114,37 @@ describe('errors', () => {
     expect(onError).not.toBeCalled()
   })
 
+  it('throws an error if it doesnt match the specified success types', async () => {
+    const requestParams: ApiRequestParams = {
+      method: 'GET',
+      url: '/endpoint',
+      successCodes: [400, 401]
+    }
+    const errorJson = {test: 'error'}
+    fetchMock.mockResponseOnce(JSON.stringify(errorJson), {
+      headers: {'content-type': 'application/json'},
+      status: 400
+    })
+
+    expect(await api.request(requestParams)).toEqual({test: 'error'})
+
+    fetchMock.mockResponseOnce(JSON.stringify(errorJson), {
+      headers: {'content-type': 'application/json'},
+      status: 401
+    })
+
+    expect(await api.request(requestParams)).toEqual({test: 'error'})
+
+    fetchMock.mockResponseOnce(JSON.stringify({success: true}), {
+      headers: {'content-type': 'application/json'},
+      status: 200
+    })
+
+    await expect(api.request(requestParams)).rejects.toEqual(
+      new ApiError(200, {success: true})
+    )
+  })
+
   it('parses api error response json', async () => {
     const errorJson = '{"test_error": "bad-error"}'
     fetchMock.mockResponseOnce(JSON.stringify(errorJson), {

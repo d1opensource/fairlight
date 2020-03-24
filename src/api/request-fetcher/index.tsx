@@ -27,9 +27,7 @@ export class ApiRequestFetcher implements RequestFetcher {
       params
     )
 
-    if (!response.ok) {
-      throw new ApiError(response.status, responseBody, responseType)
-    }
+    this.maybeThrowApiError(params, response, responseBody, responseType)
 
     return {responseBody, responseType}
   }
@@ -109,5 +107,24 @@ export class ApiRequestFetcher implements RequestFetcher {
     }
 
     return null
+  }
+
+  /**
+   * Throws `ApiError` if the response status does not match a passed success code.
+   * If no success codes are passed and the fetch response is not 'ok', throws `ApiError`
+   */
+  private maybeThrowApiError(
+    params: RequestFetcherParams,
+    response: Response,
+    responseBody: ResponseBody | null,
+    responseType: ApiResponseType | null
+  ): void {
+    if (Array.isArray(params.successCodes)) {
+      if (params.successCodes.every((code) => response.status !== code)) {
+        throw new ApiError(response.status, responseBody, responseType)
+      }
+    } else if (!response.ok) {
+      throw new ApiError(response.status, responseBody, responseType)
+    }
   }
 }

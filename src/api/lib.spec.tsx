@@ -136,6 +136,48 @@ describe('getParamsId', () => {
     )
   })
 
+  it('serializes success codes', () => {
+    for (const successCodes of [null, undefined]) {
+      const requestParams: ApiRequestParams = {
+        url: '/endpoint'
+      }
+
+      expect(getParamsId(requestParams)).toEqual(
+        getParamsId({
+          ...requestParams,
+          successCodes
+        })
+      )
+    }
+
+    const requestParams: ApiRequestParams = {
+      url: '/endpoint',
+      successCodes: [200, 201]
+    }
+
+    for (const successCodes of [[], [200], [201], [200, 201, 202]]) {
+      expect(getParamsId(requestParams)).not.toEqual(
+        getParamsId({
+          ...requestParams,
+          successCodes
+        })
+      )
+    }
+
+    for (const successCodes of [
+      [200, 201],
+      [201, 200],
+      [200, null, 201, null]
+    ]) {
+      expect(getParamsId(requestParams)).toEqual(
+        getParamsId({
+          ...requestParams,
+          successCodes
+        })
+      )
+    }
+  })
+
   it('serializes an extra key', () => {
     const requestParams: ApiRequestParams = {
       method: 'GET',

@@ -210,7 +210,8 @@ export class ApiRequestManager {
         url: `${this.baseUrl}${params.url}`,
         body,
         headers,
-        responseType: params.responseType
+        responseType: params.responseType,
+        successCodes: params.successCodes
       })
 
       const responseBody =

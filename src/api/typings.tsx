@@ -14,6 +14,7 @@ interface ApiCommonRequestParams<TMethod extends ApiRequestMethod> {
   method?: TMethod
   headers?: ApiHeaders
   responseType?: ApiResponseType
+  successCodes?: number[]
   extraKey?: string
 }
 
@@ -92,6 +93,7 @@ export interface RequestFetcherParams {
   body?: BodyInit
   headers?: Headers
   responseType?: ApiResponseType
+  successCodes?: number[]
 }
 
 export interface RequestFetcher {
