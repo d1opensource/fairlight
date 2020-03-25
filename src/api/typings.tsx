@@ -39,9 +39,15 @@ export type ApiRequestParams<
   ? ApiMutationRequestParams<TMethod, TResponseBody>
   : never
 
-export type ApiSerializeRequestJson = (body: object) => object
+export type ApiSerializeRequestJson = (
+  body: object,
+  requestParams: ApiRequestParams
+) => object
 
-export type ApiParseResponseJson = (body: object) => object
+export type ApiParseResponseJson = (
+  body: object,
+  requestParams: ApiRequestParams
+) => object
 
 export type ApiRequestFetchPolicy =
   /**
@@ -97,10 +103,11 @@ export interface RequestFetcherParams {
 }
 
 export interface RequestFetcher {
-  getResponse(
-    params: RequestFetcherParams
-  ): Promise<{
-    responseBody: ResponseBody | null
-    responseType: ApiResponseType | null
-  }>
+  getResponse(params: RequestFetcherParams): Promise<RequestFetcherResponse>
+}
+
+export interface RequestFetcherResponse {
+  body: ResponseBody | null
+  bodyType: ApiResponseType | null
+  status: number
 }

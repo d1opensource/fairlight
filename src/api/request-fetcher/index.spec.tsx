@@ -20,7 +20,7 @@ it('does not parse the response body if it cant determine the response type', as
       url: 'http://test.com/endpoint',
       method: 'GET'
     })
-  ).toEqual({responseBody: null, responseType: null})
+  ).toEqual({status: 200, body: null, bodyType: null})
 
   // unknown content type
   fetchMock.mockResponseOnce(JSON.stringify({num: 12345}), {
@@ -31,7 +31,7 @@ it('does not parse the response body if it cant determine the response type', as
       url: 'http://test.com/endpoint',
       method: 'GET'
     })
-  ).toEqual({responseBody: null, responseType: null})
+  ).toEqual({status: 200, body: null, bodyType: null})
 })
 
 it('throws a TypeError if an invalid responseBody is passed', async () => {
