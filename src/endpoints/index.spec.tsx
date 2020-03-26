@@ -78,6 +78,9 @@ describe('HttpEndpoints', () => {
         method,
         url: '/base/endpoint?empty=&null=null&num=3&str=string&zero=0'
       })
+
+      // ensure no `?` is appended if an empty {} is passed
+      expect(Endpoints[method]({query: {}}).url).toEqual('/base/endpoint')
     }
   })
 

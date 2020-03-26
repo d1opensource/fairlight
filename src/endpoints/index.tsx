@@ -157,7 +157,7 @@ export class HttpEndpoints {
   ): ApiRequestParams<TMethod, TResponseBody> {
     let url = this.buildPath(path)
 
-    if (requestInit.query) {
+    if (requestInit.query && Object.keys(requestInit.query).length > 0) {
       url += `?${this._serializeQuery(requestInit.query)}`
     }
 
