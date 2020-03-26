@@ -157,7 +157,7 @@ export class HttpEndpoints {
 
     const {query, ...restRequestInit} = requestInit
 
-    if (query) {
+    if (query && Object.keys(query).length > 0) {
       url += `?${this._serializeQuery(query)}`
     }
 
