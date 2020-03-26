@@ -27,9 +27,8 @@ jobs:
       - run: npm run lint
       - name: Set ENV for codeclimate (pull_request)
         run: |
-          git fetch --no-tags --prune --depth=1 origin +refs/heads/$GITHUB_HEAD_REF:refs/remotes/origin/$GITHUB_HEAD_REF
-          echo "::set-env name=GIT_BRANCH::$GITHUB_HEAD_REF"
-          echo "::set-env name=GIT_COMMIT_SHA::$(git rev-parse origin/$GITHUB_HEAD_REF)"
+          echo "::set-env name=GIT_BRANCH::${{ github.head_ref }}"
+          echo "::set-env name=GIT_COMMIT_SHA::$(git rev-parse HEAD)"
         if: github.event_name == 'pull_request'
       - name: Set ENV for codeclimate (push)
         run: |
@@ -39,7 +38,7 @@ jobs:
       - name: Code Climate Test Reporter
         uses: aktions/codeclimate-test-reporter@v1
         with:
-          codeclimate-test-reporter-id: ${{ secrets.CC_TEST_REPORTER_ID }}
+          codeclimate-test-reporter-id: e603a31c2988a01bae194f33de60d6f6f17b68cc8f36e5479f987e34d2186988
   build:
     runs-on: ubuntu-latest
     steps:
