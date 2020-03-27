@@ -1,7 +1,7 @@
 import {ResponseBody} from '../../api/typings'
 
 export interface UseApiQueryState {
-  id: symbol | null
+  requestId: symbol | null
   paramsId: string | null
   loading: boolean
   data: ResponseBody | undefined | null

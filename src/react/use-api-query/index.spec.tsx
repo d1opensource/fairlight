@@ -260,7 +260,7 @@ describe('cache', () => {
 
       expect(result.current[0]).toEqual({
         data: response,
-        loading: true,
+        loading: fetchPolicy === 'cache-only' ? false : true,
         error: null
       })
 

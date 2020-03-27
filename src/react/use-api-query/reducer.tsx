@@ -3,8 +3,8 @@ import {ActionType, getType, Reducer} from 'typesafe-actions'
 import {useApiQueryActions} from './actions'
 import {UseApiQueryState} from './typings'
 
-const INITIAL_STATE = {
-  id: null,
+export const INITIAL_STATE: UseApiQueryState = {
+  requestId: null,
   paramsId: null,
   loading: false,
   data: null,
@@ -21,7 +21,7 @@ export const useApiQueryReducer: Reducer<
     case getType(useApiQueryActions.request):
       return {
         ...prev,
-        id: action.payload.id,
+        requestId: action.payload.id,
         paramsId: action.payload.paramsId,
         loading: true,
         data:
@@ -55,7 +55,7 @@ export const useApiQueryReducer: Reducer<
       if (action.payload.paramsId === prev.paramsId) {
         return {
           ...prev,
-          id: action.payload.id,
+          requestId: action.payload.id,
           paramsId: action.payload.paramsId,
           loading: true,
           data: action.payload.reinitialize ? null : prev.data
@@ -84,6 +84,7 @@ function isLiveRequest(
   action: {payload: {id: symbol; paramsId: string}}
 ) {
   return (
-    action.payload.id === prev.id && action.payload.paramsId === prev.paramsId
+    action.payload.id === prev.requestId &&
+    action.payload.paramsId === prev.paramsId
   )
 }

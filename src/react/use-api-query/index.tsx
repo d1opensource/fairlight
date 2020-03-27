@@ -1,4 +1,5 @@
 import {useContext, useEffect, useMemo, useReducer, useRef} from 'react'
+import {ActionType} from 'typesafe-actions'
 
 import {READ_CACHE_POLICIES} from '../../api/constants'
 import {getParamsId} from '../../api/lib'
@@ -10,7 +11,7 @@ import {
 } from '../../api/typings'
 import {ApiContext} from '../context'
 import {useApiQueryActions} from './actions'
-import {useApiQueryReducer} from './reducer'
+import {INITIAL_STATE, useApiQueryReducer} from './reducer'
 
 type FalsyValue = '' | 0 | false | undefined | null
 
@@ -78,23 +79,58 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
     defaultFetchPolicies: {useApiQuery: defaultFetchPolicy}
   } = useContext(ApiContext)
   const fetchPolicy = opts.fetchPolicy || defaultFetchPolicy
-  const paramsId = params && getParamsId(params)
-  const [state, dispatch] = useReducer(useApiQueryReducer, null, () => ({
-    id: null,
-    paramsId: null,
-    loading: !!params,
-    data:
-      // if this api request will read from the cache,
-      // initialize data to the value in the cache
-      params && READ_CACHE_POLICIES.includes(fetchPolicy)
-        ? api.readCachedResponse(params) || null
-        : null,
-    error: null
-  }))
+
+  const [state, dispatch] = useReducer(useApiQueryReducer, INITIAL_STATE)
+
+  const paramsId: string | null = params ? getParamsId(params) : null
+  const requestId = Symbol()
+
+  /**
+   * True if `paramsId` just changed, but `useEffect` hasn't triggered yet
+   */
+  const paramsIdChanged = useValueChanged(paramsId)
+
+  /**
+   * If we're about to kick off a new request, and the `fetchPolicy` allows
+   * reading from the cache, read the cached data.
+   */
+  const cachedData: TResponseBody | null =
+    paramsIdChanged && params && READ_CACHE_POLICIES.includes(fetchPolicy)
+      ? api.readCachedResponse(params)
+      : null
+
+  /**
+   * Determines which action to dispatch if `paramsId` changes
+   */
+  const getParamsIdChangedAction = (): ActionType<typeof useApiQueryActions> => {
+    if (!params) {
+      return useApiQueryActions.reset()
+    }
+
+    if (fetchPolicy === 'cache-only' && cachedData) {
+      return useApiQueryActions.setData(cachedData)
+    }
+
+    return useApiQueryActions.request({
+      id: requestId,
+      paramsId: paramsId as string,
+      dontReinitialize: opts.dontReinitialize,
+      initData: cachedData
+    })
+  }
+
+  /**
+   * If params id changes, but `useEffect` hasn't kicked off yet,
+   * derive an intermediary state via the reducer
+   */
+  const derivedState = paramsIdChanged
+    ? useApiQueryReducer(state, getParamsIdChangedAction())
+    : state
 
   useEffect(() => {
+    dispatch(getParamsIdChangedAction())
+
     if (!params) {
-      dispatch(useApiQueryActions.reset())
       return undefined
     }
 
@@ -102,27 +138,10 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
       dispatch(useApiQueryActions.setData(responseBody))
     })
 
-    const cachedData = READ_CACHE_POLICIES.includes(fetchPolicy)
-      ? api.readCachedResponse(params)
-      : null
-
     if (fetchPolicy === 'cache-only' && cachedData) {
-      // don't bother kicking off a request
-      // since we already have the cached data
-      useApiQueryActions.setData(cachedData)
-      return undefined
+      return unsubscribe
     }
 
-    const id = Symbol()
-
-    dispatch(
-      useApiQueryActions.request({
-        id,
-        paramsId: paramsId as string,
-        dontReinitialize: opts.dontReinitialize,
-        initData: cachedData || null
-      })
-    )
     ;(async () => {
       try {
         const data = await api.request(params, {
@@ -131,7 +150,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
         })
         dispatch(
           useApiQueryActions.success({
-            id,
+            id: requestId,
             paramsId: paramsId as string,
             data
           })
@@ -139,7 +158,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
       } catch (error) {
         dispatch(
           useApiQueryActions.failure({
-            id,
+            id: requestId,
             paramsId: paramsId as string,
             error
           })
@@ -147,27 +166,23 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
       }
     })()
 
-    return () => {
-      unsubscribe()
-    }
+    return unsubscribe
   }, [paramsId])
 
-  // return loading flag if `useEffect` hasn't kicked in yet
-  // but the a new request is about to kick off
-  const prevParamsId = usePrevious(paramsId)
-  const aboutToStartNewRequest = paramsId && paramsId !== prevParamsId
-
-  const returnedState = useMemo(
-    () => ({
-      loading: aboutToStartNewRequest || state.loading,
-      data: state.data as TResponseBody | null | undefined,
-      error: state.error
-    }),
-    [aboutToStartNewRequest, state.data, state.loading, state.error]
-  )
+  /**
+   * Keep referential equality and only change if underlying
+   * `loading`, `data`, or `error` state changes
+   */
+  const returnData = useMemo((): UseApiQueryData<TResponseBody> => {
+    return {
+      loading: derivedState.loading,
+      data: derivedState.data as TResponseBody | null | undefined,
+      error: derivedState.error
+    }
+  }, [derivedState.loading, derivedState.data, derivedState.error])
 
   return [
-    returnedState,
+    returnData,
     {
       setData: (data) => {
         if (fetchPolicy === 'no-cache' || !params) {
@@ -219,15 +234,14 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
 }
 
 /**
- * Returns previous value, or null if first render pass
- * @param value updating value
+ * Returns true if the value changed since last render (true on first pass)
  */
-function usePrevious<T extends any>(value: T | null): T | null {
+function useValueChanged<T extends any>(value: T | null): boolean {
   const ref = useRef<T | null>(null)
 
   useEffect(() => {
     ref.current = value
   }, [value])
 
-  return ref.current
+  return ref.current !== value
 }
