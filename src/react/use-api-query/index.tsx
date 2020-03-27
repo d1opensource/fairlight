@@ -1,10 +1,8 @@
 import {useContext, useEffect, useMemo, useReducer, useRef} from 'react'
-import {ActionType} from 'typesafe-actions'
 
 import {READ_CACHE_POLICIES} from '../../api/constants'
 import {getParamsId} from '../../api/lib'
 import {
-  ApiRequestFetchPolicy,
   ApiRequestMethod,
   ApiRequestParams,
   ResponseBody
@@ -12,50 +10,14 @@ import {
 import {ApiContext} from '../context'
 import {useApiQueryActions} from './actions'
 import {INITIAL_STATE, useApiQueryReducer} from './reducer'
-
-type FalsyValue = '' | 0 | false | undefined | null
-
-interface UseApiQueryData<TResponseBody extends ResponseBody> {
-  data: TResponseBody | undefined | null
-  loading: boolean
-  error: Error | null
-}
-
-export interface UseApiQueryActions<TResponseBody extends ResponseBody> {
-  /**
-   * Sets the response data of the Api request manually.
-   *
-   * If this request is already reading or writing to the cache,
-   * it will update the underlying cache value.
-   *
-   * This is useful if you mutate the data via a separate API call, and then and want to manually
-   * update the data in this call.
-   */
-  setData: (
-    data: TResponseBody | ((prev: TResponseBody | null) => TResponseBody)
-  ) => void
-  /**
-   * Performs a manual API fetch (over the network).
-   *
-   * Note: If fetch-policy is set to `no-cache`, it will not
-   * persist to the cache.
-   */
-  refetch: (opts?: {
-    /**
-     * Sets `data` to `null` when the request kicks off.
-     */
-    reinitialize?: boolean
-
-    /**
-     * Passed as an option to `api.request` and guarantees that a
-     * new request will be made.
-     *
-     * By default, it will use `deduplicate` from the hook's options
-     * (`true` for `GET` requests, `false` for non-`GET` requests).
-     */
-    deduplicate?: boolean
-  }) => void
-}
+import {
+  FalsyValue,
+  UseApiQueryActions,
+  UseApiQueryData,
+  UseApiQueryOptions,
+  UseApiQueryRefetch,
+  UseApiQuerySetData
+} from './typings'
 
 /**
  * API hook to run an api `GET` request, returning a `Loadable`
@@ -63,30 +25,26 @@ export interface UseApiQueryActions<TResponseBody extends ResponseBody> {
  */
 export function useApiQuery<TResponseBody extends ResponseBody>(
   params: ApiRequestParams<ApiRequestMethod, TResponseBody> | FalsyValue,
-  opts: {
-    fetchPolicy?: ApiRequestFetchPolicy
-    deduplicate?: boolean
-
-    /**
-     * If true, will keep `data` from previous requests
-     * until new data is received.
-     */
-    dontReinitialize?: boolean
-  } = {}
+  opts: UseApiQueryOptions = {}
 ): [UseApiQueryData<TResponseBody>, UseApiQueryActions<TResponseBody>] {
   const {
     api,
     defaultFetchPolicies: {useApiQuery: defaultFetchPolicy}
   } = useContext(ApiContext)
+
   const fetchPolicy = opts.fetchPolicy || defaultFetchPolicy
 
   const [state, dispatch] = useReducer(useApiQueryReducer, INITIAL_STATE)
 
   const paramsId: string | null = params ? getParamsId(params) : null
+
+  /**
+   * Used to identify the current request for concurrency management
+   */
   const requestId = Symbol()
 
   /**
-   * True if `paramsId` just changed, but `useEffect` hasn't triggered yet
+   * True if `paramsId` just changed, but `useEffect` hasn't triggered yet.
    */
   const paramsIdChanged = useValueChanged(paramsId)
 
@@ -100,35 +58,30 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
       : null
 
   /**
-   * Determines which action to dispatch if `paramsId` changes
-   */
-  const getParamsIdChangedAction = (): ActionType<typeof useApiQueryActions> => {
-    if (!params) {
-      return useApiQueryActions.reset()
-    }
-
-    if (fetchPolicy === 'cache-only' && cachedData) {
-      return useApiQueryActions.setData(cachedData)
-    }
-
-    return useApiQueryActions.request({
-      id: requestId,
-      paramsId: paramsId as string,
-      dontReinitialize: opts.dontReinitialize,
-      initData: cachedData
-    })
-  }
-
-  /**
    * If params id changes, but `useEffect` hasn't kicked off yet,
-   * derive an intermediary state via the reducer
+   * derive an intermediary state via the reducer.
    */
   const derivedState = paramsIdChanged
-    ? useApiQueryReducer(state, getParamsIdChangedAction())
+    ? useApiQueryReducer(
+        state,
+        useApiQueryActions.newRequest({
+          requestId,
+          paramsId,
+          fetchPolicy,
+          cachedData,
+          dontReinitialize: opts.dontReinitialize
+        })
+      )
     : state
 
+  /**
+   * When `paramsId` changes
+   * - Update reducer state with the derived state for the new request
+   * - Sunscribe to cache updates
+   * - Make the request
+   */
   useEffect(() => {
-    dispatch(getParamsIdChangedAction())
+    dispatch(useApiQueryActions.replaceState(derivedState))
 
     if (!params) {
       return undefined
@@ -139,10 +92,11 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
     })
 
     if (fetchPolicy === 'cache-only' && cachedData) {
+      // no need to make a request
       return unsubscribe
     }
 
-    ;(async () => {
+    ;(async function requestQueryData() {
       try {
         const data = await api.request(params, {
           fetchPolicy,
@@ -150,7 +104,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
         })
         dispatch(
           useApiQueryActions.success({
-            id: requestId,
+            requestId: requestId,
             paramsId: paramsId as string,
             data
           })
@@ -158,7 +112,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
       } catch (error) {
         dispatch(
           useApiQueryActions.failure({
-            id: requestId,
+            requestId: requestId,
             paramsId: paramsId as string,
             error
           })
@@ -181,56 +135,56 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
     }
   }, [derivedState.loading, derivedState.data, derivedState.error])
 
-  return [
-    returnData,
-    {
-      setData: (data) => {
-        if (fetchPolicy === 'no-cache' || !params) {
-          dispatch(useApiQueryActions.setData(data))
-        } else {
-          // write to the cache, which will in turn
-          // notify the subscription and update `state.data`
+  const handleSetData: UseApiQuerySetData<TResponseBody> = function handleSetData(
+    data
+  ) {
+    if (fetchPolicy === 'no-cache' || !params) {
+      dispatch(useApiQueryActions.setData(data))
+    } else {
+      // write to the cache, which will in turn
+      // notify the subscription and update `state.data`
 
-          if (typeof data === 'function') {
-            // function setter
-            const prev = api.readCachedResponse(params)
-            api.writeCachedResponse(
-              params,
-              (data as (prev: TResponseBody | null) => TResponseBody)(prev)
-            )
-          } else {
-            api.writeCachedResponse(params, data)
-          }
-        }
-      },
-
-      refetch: async (refetchOpts = {}) => {
-        if (!paramsId || !params) {
-          return
-        }
-
-        const id = Symbol()
-
-        dispatch(
-          useApiQueryActions.refetchRequest({
-            id,
-            paramsId,
-            reinitialize: refetchOpts.reinitialize
-          })
+      if (typeof data === 'function') {
+        // function setter
+        const prev = api.readCachedResponse(params)
+        api.writeCachedResponse(
+          params,
+          (data as (prev: TResponseBody | null) => TResponseBody)(prev)
         )
-        try {
-          const data = await api.request(params, {
-            fetchPolicy:
-              fetchPolicy === 'no-cache' ? 'no-cache' : 'fetch-first',
-            deduplicate: refetchOpts.deduplicate ?? opts.deduplicate
-          })
-          dispatch(useApiQueryActions.success({id, paramsId, data}))
-        } catch (error) {
-          dispatch(useApiQueryActions.failure({id, paramsId, error}))
-        }
+      } else {
+        api.writeCachedResponse(params, data)
       }
     }
-  ]
+  }
+
+  const handleRefetch: UseApiQueryRefetch = async function handleRefetch(
+    refetchOpts = {}
+  ) {
+    if (!paramsId || !params) {
+      return
+    }
+
+    const requestId = Symbol()
+
+    dispatch(
+      useApiQueryActions.refetchRequest({
+        requestId,
+        paramsId,
+        reinitialize: refetchOpts.reinitialize
+      })
+    )
+    try {
+      const data = await api.request(params, {
+        fetchPolicy: fetchPolicy === 'no-cache' ? 'no-cache' : 'fetch-first',
+        deduplicate: refetchOpts.deduplicate ?? opts.deduplicate
+      })
+      dispatch(useApiQueryActions.success({requestId, paramsId, data}))
+    } catch (error) {
+      dispatch(useApiQueryActions.failure({requestId, paramsId, error}))
+    }
+  }
+
+  return [returnData, {setData: handleSetData, refetch: handleRefetch}]
 }
 
 /**

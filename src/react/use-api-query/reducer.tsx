@@ -1,5 +1,6 @@
 import {ActionType, getType, Reducer} from 'typesafe-actions'
 
+import {ResponseBody} from '../../api/typings'
 import {useApiQueryActions} from './actions'
 import {UseApiQueryState} from './typings'
 
@@ -16,16 +17,28 @@ export const useApiQueryReducer: Reducer<
   ActionType<typeof useApiQueryActions>
 > = (prev = INITIAL_STATE, action) => {
   switch (action.type) {
-    case getType(useApiQueryActions.reset):
-      return INITIAL_STATE
-    case getType(useApiQueryActions.request):
+    case getType(useApiQueryActions.newRequest):
+      if (!action.payload.paramsId) {
+        return INITIAL_STATE
+      }
+
+      if (
+        action.payload.fetchPolicy === 'cache-only' &&
+        action.payload.cachedData
+      ) {
+        return {
+          ...INITIAL_STATE,
+          data: action.payload.cachedData
+        }
+      }
+
       return {
-        ...prev,
-        requestId: action.payload.id,
+        requestId: action.payload.requestId,
         paramsId: action.payload.paramsId,
         loading: true,
+        error: null,
         data:
-          action.payload.initData ||
+          action.payload.cachedData ||
           (action.payload.dontReinitialize ? prev.data : null)
       }
     case getType(useApiQueryActions.success):
@@ -50,12 +63,14 @@ export const useApiQueryReducer: Reducer<
       }
 
       return prev
+    case getType(useApiQueryActions.replaceState):
+      return action.payload
     case getType(useApiQueryActions.refetchRequest):
       // ensure that the refetch has the correct request params
       if (action.payload.paramsId === prev.paramsId) {
         return {
           ...prev,
-          requestId: action.payload.id,
+          requestId: action.payload.requestId,
           paramsId: action.payload.paramsId,
           loading: true,
           data: action.payload.reinitialize ? null : prev.data
@@ -68,7 +83,7 @@ export const useApiQueryReducer: Reducer<
         ...prev,
         data:
           typeof action.payload === 'function'
-            ? action.payload(prev.data)
+            ? action.payload(prev.data as ResponseBody)
             : action.payload
       }
     default:
@@ -81,10 +96,10 @@ export const useApiQueryReducer: Reducer<
  */
 function isLiveRequest(
   prev: UseApiQueryState,
-  action: {payload: {id: symbol; paramsId: string}}
+  action: {payload: {requestId: symbol; paramsId: string}}
 ) {
   return (
-    action.payload.id === prev.requestId &&
+    action.payload.requestId === prev.requestId &&
     action.payload.paramsId === prev.paramsId
   )
 }

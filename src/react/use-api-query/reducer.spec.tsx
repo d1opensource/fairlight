@@ -32,15 +32,17 @@ it('stores a successful response data if it matches the most recent request', ()
     url: '/endpoint'
   }
 
-  const id = Symbol()
+  const requestId = Symbol()
 
   // matching success/failure actions
 
   state = useApiQueryReducer(
     state,
-    useApiQueryActions.request({
-      id,
-      paramsId: getParamsId(params)
+    useApiQueryActions.newRequest({
+      requestId,
+      paramsId: getParamsId(params),
+      fetchPolicy: 'no-cache',
+      cachedData: null
     })
   )
 
@@ -49,7 +51,7 @@ it('stores a successful response data if it matches the most recent request', ()
   state = useApiQueryReducer(
     state,
     useApiQueryActions.success({
-      id,
+      requestId,
       paramsId: getParamsId(params),
       data
     })
@@ -62,7 +64,7 @@ it('stores a successful response data if it matches the most recent request', ()
   state = useApiQueryReducer(
     state,
     useApiQueryActions.failure({
-      id,
+      requestId,
       paramsId: getParamsId(params),
       error
     })
@@ -72,7 +74,15 @@ it('stores a successful response data if it matches the most recent request', ()
 
   // not matching success/failure actions
 
-  state = useApiQueryReducer(state, useApiQueryActions.reset())
+  state = useApiQueryReducer(
+    state,
+    useApiQueryActions.newRequest({
+      requestId,
+      paramsId: null,
+      fetchPolicy: 'no-cache',
+      cachedData: null
+    })
+  )
 
   expect(state.data).toEqual(null)
   expect(state.error).toEqual(null)
@@ -82,7 +92,7 @@ it('stores a successful response data if it matches the most recent request', ()
   state = useApiQueryReducer(
     state,
     useApiQueryActions.success({
-      id: wrongId,
+      requestId: wrongId,
       paramsId: getParamsId(params),
       data
     })
@@ -93,7 +103,7 @@ it('stores a successful response data if it matches the most recent request', ()
   state = useApiQueryReducer(
     state,
     useApiQueryActions.failure({
-      id: wrongId,
+      requestId: wrongId,
       paramsId: getParamsId(params),
       error
     })
@@ -114,7 +124,7 @@ it('only starts a refetch request if the request params are correct', () => {
     {type: '@@INIT', payload: null} as any
   )
 
-  const id = Symbol()
+  const requestId = Symbol()
   const params: ApiRequestParams = {
     method: 'GET',
     url: '/endpoint'
@@ -125,16 +135,18 @@ it('only starts a refetch request if the request params are correct', () => {
 
   state = useApiQueryReducer(
     state,
-    useApiQueryActions.request({
-      id,
-      paramsId: getParamsId(params)
+    useApiQueryActions.newRequest({
+      requestId,
+      paramsId: getParamsId(params),
+      fetchPolicy: 'no-cache',
+      cachedData: null
     })
   )
 
   state = useApiQueryReducer(
     state,
     useApiQueryActions.success({
-      id,
+      requestId,
       paramsId: getParamsId(params),
       data
     })
@@ -147,7 +159,7 @@ it('only starts a refetch request if the request params are correct', () => {
   state = useApiQueryReducer(
     state,
     useApiQueryActions.refetchRequest({
-      id: refetchId, // new symbol
+      requestId: refetchId, // new symbol
       paramsId: getParamsId(params) // same params
     })
   )
@@ -157,22 +169,32 @@ it('only starts a refetch request if the request params are correct', () => {
 
   // wrong paramsId
 
-  state = useApiQueryReducer(state, useApiQueryActions.reset())
+  state = useApiQueryReducer(
+    state,
+    useApiQueryActions.newRequest({
+      requestId,
+      paramsId: null,
+      fetchPolicy: 'no-cache',
+      cachedData: null
+    })
+  )
 
   expect(state.loading).toEqual(false)
 
   state = useApiQueryReducer(
     state,
-    useApiQueryActions.request({
-      id,
-      paramsId: getParamsId(params)
+    useApiQueryActions.newRequest({
+      requestId,
+      paramsId: getParamsId(params),
+      fetchPolicy: 'no-cache',
+      cachedData: null
     })
   )
 
   state = useApiQueryReducer(
     state,
     useApiQueryActions.success({
-      id,
+      requestId,
       paramsId: getParamsId(params),
       data
     })
@@ -183,11 +205,11 @@ it('only starts a refetch request if the request params are correct', () => {
   state = useApiQueryReducer(
     state,
     useApiQueryActions.refetchRequest({
-      id: Symbol(),
+      requestId: Symbol(),
       paramsId: getParamsId({method: 'GET', url: '/refetch-endpoint'})
     })
   )
 
   expect(state.loading).toEqual(false)
-  expect(state.requestId).toEqual(id) // keep original id
+  expect(state.requestId).toEqual(requestId) // keep original id
 })
