@@ -1,4 +1,4 @@
-import {createStandardAction} from 'typesafe-actions'
+import {createAction} from 'typesafe-actions'
 
 import {ApiRequestFetchPolicy, ResponseBody} from '../../api/typings'
 import {UseApiQueryState} from './typings'
@@ -7,7 +7,7 @@ export const useApiQueryActions = {
   /**
    * A new query request has begun
    */
-  newRequest: createStandardAction('NEW_REQUEST')<{
+  newRequest: createAction('NEW_REQUEST')<{
     requestId: symbol
     paramsId: string | null
     fetchPolicy: ApiRequestFetchPolicy
@@ -18,12 +18,12 @@ export const useApiQueryActions = {
   /**
    * Used to sync post-`newRequest` state at the start of `useEffect`
    */
-  replaceState: createStandardAction('REPLACE_STATE')<UseApiQueryState>(),
+  replaceState: createAction('REPLACE_STATE')<UseApiQueryState>(),
 
   /**
    * A refetchRequest has begun.
    */
-  refetchRequest: createStandardAction('REFETCH_REQUEST')<{
+  refetchRequest: createAction('REFETCH_REQUEST')<{
     requestId: symbol
     paramsId: string
     reinitialize?: boolean
@@ -32,7 +32,7 @@ export const useApiQueryActions = {
   /**
    * A request (or refetchRequest) has completed.
    */
-  success: createStandardAction('SUCCESS')<{
+  success: createAction('SUCCESS')<{
     requestId: symbol
     paramsId: string
     data: ResponseBody
@@ -41,7 +41,7 @@ export const useApiQueryActions = {
   /**
    * A request (or refetchRequest) has failed.
    */
-  failure: createStandardAction('FAILURE')<{
+  failure: createAction('FAILURE')<{
     requestId: symbol
     paramsId: string
     error: Error
@@ -50,7 +50,7 @@ export const useApiQueryActions = {
   /**
    * The `data` should be set manually.
    */
-  setData: createStandardAction('SET_DATA')<
+  setData: createAction('SET_DATA')<
     ResponseBody | ((prev: ResponseBody) => ResponseBody)
   >()
 }
