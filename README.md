@@ -32,6 +32,7 @@ const [{data, loading, error}] = useApiQuery({url: `/users/${id}`})
   - [Dependent queries](#dependent-queries)
   - [Manually updating query data](#manually-updating-query-data)
   - [Custom response body parsing](#custom-response-body-parsing)
+  - [Success response codes](#success-response-codes)
   - [Custom query string serialization](#custom-query-string-serialization)
   - [Setting default headers (ie. an auth token) for all requests](#setting-default-headers-ie-an-auth-token-for-all-requests)
   - [Error handling](#error-handling)
@@ -386,6 +387,31 @@ class TransactionEndpoints extends HttpEndpoints {
 const csv = await api.request(TransactionEndpoints.csvExport)
 
 // typeof csv === 'string'
+```
+
+### Success response codes
+
+By default, requests with response statuses in the `200`-range (200-299) will be considered successful, with anything outside of the range throwing an `ApiError`. If you'd like to customize the success statuses, you can set `successCodes`:
+
+```tsx
+class UserEndpoints extends HttpEndpoints {
+  static basePath = '/users'
+
+  static create(body) {
+    return super._post('', {
+      body,
+      successCodes: [201]
+    })
+  }
+}
+
+await api.request(
+  UserEndpoints.create({
+    firstName: 'Jane',
+    lastName: 'Doe'
+  })
+)
+// ↑ any response status other than `201` will throw `ApiError`
 ```
 
 ### Custom query string serialization
@@ -947,6 +973,7 @@ const user = await api.request({
   body: {name: 'Example User',}
   headers: {'x-user-id': '12345'},
   responseType: 'json',
+  successCodes: [200],
   extraKey: 'extra_cache_key'
 }, {
   fetchPolicy: 'no-cache',
@@ -960,14 +987,15 @@ const user = await api.request({
 
 `params` fields:
 
-| Field                                                                                                          | Description                                                                                                                                                                                          |
-| -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `url: string`                                                                                                  | URL path for the request. This will be appended to the `baseUrl` which was passed to the `Api` constructor.                                                                                          |
-| `method?: 'GET' \| 'POST' \| 'PUT' \| 'PATCH' \| 'DELETE'`                                                     | HTTP method for the request. Defaults to `GET` if not provided.                                                                                                                                      |
-| `headers?: { [key: string]: string }`                                                                          | An object of key-value headers for the request.                                                                                                                                                      |
-| `body?: object \| string \| Blob \| BufferSource \| FormData \| URLSearchParams \| ReadableStream<Uint8Array>` | HTTP request body. If a plain JS object is passed, the `Content-Type: 'application/json'` header will automatically be set.                                                                          |
-| `responseType?: 'json' \| 'text' \| 'blob'`                                                                    | Expected response body format. If provided, the response body will be parsed to the provided format. If not passed, the response body type will be inferred from the `Content-Type` response header. |
-| `extraKey?: string`                                                                                            | An additional key to be serialized into the caching key.                                                                                                                                             |
+| Field                                                                                                          | Description                                                                                                                                                                                                                                                 |
+| -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `url: string`                                                                                                  | URL path for the request. This will be appended to the `baseUrl` which was passed to the `Api` constructor.                                                                                                                                                 |
+| `method?: 'GET' \| 'POST' \| 'PUT' \| 'PATCH' \| 'DELETE'`                                                     | HTTP method for the request. Defaults to `GET` if not provided.                                                                                                                                                                                             |
+| `headers?: { [key: string]: string }`                                                                          | An object of key-value headers for the request.                                                                                                                                                                                                             |
+| `body?: object \| string \| Blob \| BufferSource \| FormData \| URLSearchParams \| ReadableStream<Uint8Array>` | HTTP request body. If a plain JS object is passed, the `Content-Type: 'application/json'` header will automatically be set.                                                                                                                                 |
+| `responseType?: 'json' \| 'text' \| 'blob'`                                                                    | Expected response body format. If provided, the response body will be parsed to the provided format. If not passed, the response body type will be inferred from the `Content-Type` response header.                                                        |
+| `successCodes?: number[]`                                                                                      | An array of status codes which determine if the request was successful. If the response is _not_ one of these status codes, an `ApiError` will be thrown. When this is not set, any status code in the `200` range (200-299) will be considered successful. |
+| `extraKey?: string`                                                                                            | An additional key to be serialized into the caching key.                                                                                                                                                                                                    |
 
 `opts` fields:
 

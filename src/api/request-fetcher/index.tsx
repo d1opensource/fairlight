@@ -1,9 +1,8 @@
-import {ApiError} from '../errors'
 import {
   ApiResponseType,
   RequestFetcher,
   RequestFetcherParams,
-  ResponseBody
+  RequestFetcherResponse
 } from '../typings'
 
 /**
@@ -16,22 +15,10 @@ import {
 export class ApiRequestFetcher implements RequestFetcher {
   getResponse = async (
     params: RequestFetcherParams
-  ): Promise<{
-    responseBody: ResponseBody | null
-    responseType: ApiResponseType | null
-  }> => {
+  ): Promise<RequestFetcherResponse> => {
     const request = this.createRequest(params)
     const response = await fetch(request)
-    const {responseBody, responseType} = await this.parseResponseBody(
-      response,
-      params
-    )
-
-    if (!response.ok) {
-      throw new ApiError(response.status, responseBody, responseType)
-    }
-
-    return {responseBody, responseType}
+    return this.parseResponseBody(response, params)
   }
 
   /**
@@ -51,10 +38,9 @@ export class ApiRequestFetcher implements RequestFetcher {
   private async parseResponseBody(
     response: Response,
     params: RequestFetcherParams
-  ): Promise<{
-    responseBody: ResponseBody | null
-    responseType: ApiResponseType | null
-  }> {
+  ): Promise<RequestFetcherResponse> {
+    const {status} = response
+
     const responseType =
       params.responseType ||
       this.inferResponseTypeUsingContentType(
@@ -62,10 +48,10 @@ export class ApiRequestFetcher implements RequestFetcher {
       )
 
     if (!responseType) {
-      return {responseBody: null, responseType: null}
+      return {body: null, bodyType: null, status}
     }
 
-    const responseBody = await (() => {
+    const body = await (() => {
       switch (responseType) {
         case 'json':
           return response.json()
@@ -78,7 +64,7 @@ export class ApiRequestFetcher implements RequestFetcher {
       }
     })()
 
-    return {responseBody, responseType}
+    return {body: body, bodyType: responseType, status}
   }
 
   /**

@@ -14,6 +14,7 @@ import {
   ApiSerializeRequestJson,
   RequestBody,
   RequestFetcher,
+  RequestFetcherResponse,
   ResponseBody
 } from '../typings'
 
@@ -176,47 +177,30 @@ export class ApiRequestManager {
     params: ApiRequestParams,
     options: ApiRequestOptions
   ): Promise<ResponseBody | null> => {
-    const {method = DEFAULT_REQUEST_METHOD} = params
     const {fetchPolicy = this.defaultFetchPolicy} = options
     try {
-      let headers = new Headers(this.defaultHeaders)
-
-      if (params.headers) {
-        headers = applyHeaders(headers, params.headers)
-      }
-
-      let body: BodyInit | undefined
-
-      if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(method)) {
-        const paramBody = (params as {body: RequestBody}).body
-
-        if (
-          paramBody &&
-          ![Blob, FormData, URLSearchParams, ReadableStream].some(
-            (bodyType) => paramBody instanceof bodyType
-          ) &&
-          typeof paramBody !== 'string'
-        ) {
-          // prepare JSON body and add header
-          body = JSON.stringify(this.serializeRequestJson(paramBody as object))
-          headers.set('Content-Type', 'application/json')
-        } else {
-          body = paramBody as BodyInit
-        }
-      }
+      const {body, headers} = this.getRequestHeadersAndBody(params)
 
       const response = await this.requestFetcher.getResponse({
-        method,
+        method: params.method || DEFAULT_REQUEST_METHOD,
         url: `${this.baseUrl}${params.url}`,
         body,
         headers,
-        responseType: params.responseType
+        responseType: params.responseType,
+        successCodes: params.successCodes
       })
 
-      const responseBody =
-        response.responseType === 'json'
-          ? this.parseResponseJson(response.responseBody as object)
-          : response.responseBody
+      const parsedResponse: RequestFetcherResponse = {
+        ...response,
+        body:
+          response.bodyType === 'json'
+            ? this.parseResponseJson(response.body as object, params)
+            : response.body
+      }
+
+      this.maybeThrowApiError(params, parsedResponse)
+
+      const {body: responseBody} = parsedResponse
 
       if (fetchPolicy !== 'no-cache') {
         this.emitter.emit(RECEIVED_RESPONSE_BODY_EVENT, params, responseBody)
@@ -224,13 +208,68 @@ export class ApiRequestManager {
 
       return responseBody
     } catch (error) {
-      /* istanbul ignore next */
-      if (error instanceof ApiError && error.responseType === 'json') {
-        error.responseBody = this.parseResponseJson(error.responseBody)
-      }
-
       this.emitter.emit(ERROR_EVENT, error)
       throw error
+    }
+  }
+
+  /**
+   * Modifies request headers and body to use for the request.
+   * - Headers are merged with any defined default headers.
+   * - For JSON request bodies, it is serialized to a string and
+   *   sets the appropriate 'Content-Type' header.
+   */
+  private getRequestHeadersAndBody(
+    params: ApiRequestParams
+  ): {headers: Headers; body: BodyInit | undefined} {
+    let headers = new Headers(this.defaultHeaders)
+
+    if (params.headers) {
+      headers = applyHeaders(headers, params.headers)
+    }
+
+    let body: BodyInit | undefined
+
+    if (
+      params.method &&
+      ['POST', 'PATCH', 'PUT', 'DELETE'].includes(params.method)
+    ) {
+      const paramBody = (params as {body: RequestBody}).body
+
+      if (
+        paramBody &&
+        ![Blob, FormData, URLSearchParams, ReadableStream].some(
+          (bodyType) => paramBody instanceof bodyType
+        ) &&
+        typeof paramBody !== 'string'
+      ) {
+        // prepare JSON body and add header
+        body = JSON.stringify(
+          this.serializeRequestJson(paramBody as object, params)
+        )
+        headers.set('Content-Type', 'application/json')
+      } else {
+        body = paramBody as BodyInit
+      }
+    }
+
+    return {headers, body}
+  }
+
+  /**
+   * Throws `ApiError` if the response status does not match a passed success code.
+   * If no success codes are passed and the fetch response is not 'ok', throws `ApiError`
+   */
+  private maybeThrowApiError(
+    params: ApiRequestParams,
+    {status, body: responseBody, bodyType: responseType}: RequestFetcherResponse
+  ): void {
+    if (Array.isArray(params.successCodes)) {
+      if (params.successCodes.every((code) => status !== code)) {
+        throw new ApiError(status, responseBody, responseType)
+      }
+    } else if (status < 200 || status > 299) {
+      throw new ApiError(status, responseBody, responseType)
     }
   }
 }

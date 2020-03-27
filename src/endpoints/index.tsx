@@ -1,7 +1,6 @@
 /* eslint-disable no-dupe-class-members */
 
 import {
-  ApiHeaders,
   ApiRequestMethod,
   ApiRequestParams,
   RequestBody,
@@ -10,11 +9,10 @@ import {
 
 export type ApiQueryParams = Record<string, string | number | boolean>
 
-export interface EndpointCreateRequestInit {
+export interface EndpointCreateRequestInit
+  extends Omit<ApiRequestParams, 'url' | 'method'> {
   query?: ApiQueryParams
-  headers?: ApiHeaders
   body?: RequestBody
-  extraKey?: string
 }
 
 export type ApiParam = string | number
@@ -157,16 +155,16 @@ export class HttpEndpoints {
   ): ApiRequestParams<TMethod, TResponseBody> {
     let url = this.buildPath(path)
 
-    if (requestInit.query && Object.keys(requestInit.query).length > 0) {
-      url += `?${this._serializeQuery(requestInit.query)}`
+    const {query, ...restRequestInit} = requestInit
+
+    if (query && Object.keys(query).length > 0) {
+      url += `?${this._serializeQuery(query)}`
     }
 
     return {
       method,
       url,
-      headers: requestInit.headers,
-      body: requestInit.body,
-      extraKey: requestInit.extraKey
+      ...restRequestInit
     } as ApiRequestParams<TMethod, TResponseBody>
   }
 }

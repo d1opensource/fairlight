@@ -16,7 +16,8 @@ export function getParamsId(
     params.url,
     params.responseType || '',
     serializeHeaders(params.headers),
-    params.extraKey
+    params.extraKey,
+    serializeSuccessCodes(params.successCodes)
   ])
 }
 
@@ -36,6 +37,24 @@ function serializeHeaders(paramHeaders?: ApiHeaders): string {
   headerPairs.sort()
 
   return headerPairs.join('')
+}
+
+function serializeSuccessCodes(successCodes?: number[]): string {
+  if (!successCodes) {
+    return ''
+  }
+
+  const serializedCodes = uniqueCodes(
+    successCodes.filter((code) => typeof code === 'number')
+  )
+
+  serializedCodes.sort()
+
+  return JSON.stringify(serializedCodes)
+}
+
+function uniqueCodes(codes: number[]): number[] {
+  return codes.filter((value, index, self) => self.indexOf(value) === index)
 }
 
 /**

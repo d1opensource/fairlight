@@ -6,9 +6,11 @@ import {ApiResponseType, ResponseBody} from './typings'
 export class ApiCacheMissError extends Error {}
 
 /**
- * Thrown if a non-200 status response is received
+ * Thrown if a response is received with an incorrect status code.
  */
-export class ApiError<T extends ResponseBody | null> extends Error {
+export class ApiError<
+  T extends ResponseBody | null = ResponseBody
+> extends Error {
   public status: number
 
   public responseBody: T
