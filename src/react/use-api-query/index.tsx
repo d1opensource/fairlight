@@ -135,9 +135,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
     }
   }, [derivedState.loading, derivedState.data, derivedState.error])
 
-  const handleSetData: UseApiQuerySetData<TResponseBody> = function handleSetData(
-    data
-  ) {
+  const handleSetData: UseApiQuerySetData<TResponseBody> = (data) => {
     if (fetchPolicy === 'no-cache' || !params) {
       dispatch(useApiQueryActions.setData(data))
     } else {
@@ -157,9 +155,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
     }
   }
 
-  const handleRefetch: UseApiQueryRefetch = async function handleRefetch(
-    refetchOpts = {}
-  ) {
+  const handleRefetch: UseApiQueryRefetch = async (refetchOpts = {}) => {
     if (!paramsId || !params) {
       return
     }
