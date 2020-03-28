@@ -8,41 +8,13 @@ import {
   ResponseBody
 } from '../../api/typings'
 import {ApiContext} from '../context'
+import {
+  UseApiMutationParams,
+  UseApiMutationReturnFunction,
+  UseApiMutationReturnValue
+} from './typings'
 
-export interface UseApiMutationParams<TMutationArgs extends any[]> {
-  mutation: UseApiMutationParamsMutationFunction<TMutationArgs>
-  onError?: (error: Error, context: {mutationArgs: TMutationArgs}) => void
-}
-
-type MutationApiHelpers = Pick<
-  Api,
-  | 'request'
-  | 'requestInProgress'
-  | 'readCachedResponse'
-  | 'writeCachedResponse'
-  | 'buildUrl'
-  | 'setDefaultHeader'
-  | 'baseUrl'
->
-
-export type UseApiMutationParamsMutationFunction<
-  TMutationArgs extends any[]
-> = (
-  ...args: TMutationArgs
-) => (apiHelpers: MutationApiHelpers) => Promise<void>
-
-export type UseApiMutationReturnValue<TMutationArgs extends any[]> = [
-  UseApiMutationReturnFunction<TMutationArgs>,
-  UseApiMutationData
-]
-
-export type UseApiMutationReturnFunction<TMutationArgs extends any[]> = (
-  ...args: TMutationArgs
-) => Promise<void>
-
-interface UseApiMutationData {
-  mutating: boolean
-}
+export * from './typings'
 
 export function useApiMutation<TMutationArgs extends any[]>(
   params: UseApiMutationParams<TMutationArgs>
@@ -53,7 +25,7 @@ export function useApiMutation<TMutationArgs extends any[]>(
       useApiMutation: {fetchPolicy: defaultFetchPolicy}
     }
   } = useContext(ApiContext)
-  const [numOccurringMutations, setNumOccurringMutations] = useState(0)
+  const [mutating, {registerMutation, deregisterMutation}] = useIsMutating()
 
   /**
    * Same as `api.request` but uses default fetch policy from context
@@ -71,7 +43,7 @@ export function useApiMutation<TMutationArgs extends any[]>(
   const mutate: UseApiMutationReturnFunction<TMutationArgs> = async (
     ...mutationArgs
   ) => {
-    setNumOccurringMutations((prev) => prev + 1)
+    registerMutation()
 
     try {
       const mutator = params.mutation(...mutationArgs)
@@ -91,14 +63,26 @@ export function useApiMutation<TMutationArgs extends any[]>(
         throw error
       }
     } finally {
-      setNumOccurringMutations((prev) => prev - 1)
+      deregisterMutation()
     }
   }
 
+  return [mutate, {mutating}]
+}
+
+function useIsMutating(): [
+  boolean,
+  {
+    registerMutation(): void
+    deregisterMutation(): void
+  }
+] {
+  const [numOccurringMutations, setNumOccurringMutations] = useState(0)
   return [
-    mutate,
+    numOccurringMutations > 0,
     {
-      mutating: numOccurringMutations > 0
+      registerMutation: () => setNumOccurringMutations((prev) => prev + 1),
+      deregisterMutation: () => setNumOccurringMutations((prev) => prev - 1)
     }
   ]
 }
