@@ -254,7 +254,7 @@ const App = () => (
 )
 ```
 
-Note that calling `api.request()` directly always defaults `fetchPolicy` to `'no-cache'`, but you can override per-request if you'd like to interact with the cache.
+Note that calling `api.request()` directly always defaults `fetchPolicy` to `'no-cache'`, but you can override this per-request if you'd like to interact with the cache.
 
 #### Using the cache directly
 
@@ -716,7 +716,8 @@ import {useApiQuery} from 'fairlight'
 
 const [createUser, {creating: creatingUser}] = useApiMutation({
   mutation: (firstName: string, lastName: string) => async (api) => {
-    await api.request(UserEndpoints.create({firstName, lastName}))
+    const user = await api.request(UserEndpoints.create({firstName, lastName}))
+    // perform post-mutation logic (navigate, success notification, etc.)
   },
   onError: (error) => console.error(error)
 })
