@@ -1,28 +1,30 @@
-import {createStandardAction} from 'typesafe-actions'
+import {createAction} from 'typesafe-actions'
+
+import {ApiRequestFetchPolicy, ResponseBody} from '../../api/typings'
+import {UseApiQueryState} from './typings'
 
 export const useApiQueryActions = {
   /**
-   * Resets to the default state.
-   *
-   * This is useful if no request params are passed to the hook.
+   * A new query request has begun
    */
-  reset: createStandardAction('RESET')(),
+  newRequest: createAction('NEW_REQUEST')<{
+    requestId: symbol
+    paramsId: string | null
+    fetchPolicy: ApiRequestFetchPolicy
+    cachedData: ResponseBody | null
+    dontReinitialize?: boolean
+  }>(),
 
   /**
-   * A request has begun.
+   * Used to sync post-`newRequest` state at the start of `useEffect`
    */
-  request: createStandardAction('REQUEST')<{
-    id: symbol
-    paramsId: string
-    dontReinitialize?: boolean
-    initData?: any
-  }>(),
+  replaceState: createAction('REPLACE_STATE')<UseApiQueryState>(),
 
   /**
    * A refetchRequest has begun.
    */
-  refetchRequest: createStandardAction('REFETCH_REQUEST')<{
-    id: symbol
+  refetchRequest: createAction('REFETCH_REQUEST')<{
+    requestId: symbol
     paramsId: string
     reinitialize?: boolean
   }>(),
@@ -30,17 +32,17 @@ export const useApiQueryActions = {
   /**
    * A request (or refetchRequest) has completed.
    */
-  success: createStandardAction('SUCCESS')<{
-    id: symbol
+  success: createAction('SUCCESS')<{
+    requestId: symbol
     paramsId: string
-    data: any
+    data: ResponseBody
   }>(),
 
   /**
    * A request (or refetchRequest) has failed.
    */
-  failure: createStandardAction('FAILURE')<{
-    id: symbol
+  failure: createAction('FAILURE')<{
+    requestId: symbol
     paramsId: string
     error: Error
   }>(),
@@ -48,5 +50,7 @@ export const useApiQueryActions = {
   /**
    * The `data` should be set manually.
    */
-  setData: createStandardAction('SET_DATA')<any | ((prev: any) => any)>()
+  setData: createAction('SET_DATA')<
+    ResponseBody | ((prev: ResponseBody) => ResponseBody)
+  >()
 }
