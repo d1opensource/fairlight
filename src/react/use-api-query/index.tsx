@@ -19,6 +19,8 @@ import {
   UseApiQuerySetData
 } from './typings'
 
+export * from './typings'
+
 /**
  * API hook to run an api `GET` request, returning a `Loadable`
  * instance of the response data
