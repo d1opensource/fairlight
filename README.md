@@ -644,13 +644,15 @@ import {UserEndpoints} from 'my-app/endpoints'
 
 const api = new Api()
 
-const UserProfile = (props) => {
-  // We can now use `props.user`
-}
-
+// fetch data server-side:
 export async function getServerSideProps(context) {
   const user = await api.request(UserEndpoints.findById(context.params.id))
   return {props: {user}}
+}
+
+// define your component:
+const UserProfile = (props) => {
+  // we can now use `props.user`
 }
 
 export default UserProfile
@@ -666,15 +668,15 @@ import {UserEndpoints} from 'my-app/endpoints'
 
 const api = new Api()
 
+export async function getServerSideProps(context) {
+  const user = await api.request(UserEndpoints.findById(context.params.id))
+  return {props: {user}}
+}
+
 const UserProfile = (props) => {
   const [user] = useApiQuery(UserEndpoints.findById(user.id), {
     initialData: props.user
   })
-}
-
-export async function getServerSideProps(context) {
-  const user = await api.request(UserEndpoints.findById(context.params.id))
-  return {props: {user}}
 }
 
 export default UserProfile
