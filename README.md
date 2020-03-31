@@ -699,7 +699,6 @@ It's most similar to the out-of-the-box, batteries-included solution that `apoll
 Here is the current roadmap of features we have in mind:
 
 - Suspense API [#11](https://github.com/d1g1tinc/fairlight/issues/11)
-- SSR support [#12](https://github.com/d1g1tinc/fairlight/issues/12)
 - Mutations & Optimistic responses [#28](https://github.com/d1g1tinc/fairlight/issues/28)
 - Opt-in cache data normalization [#7](https://github.com/d1g1tinc/fairlight/issues/7)
 - Cache redirects [#10](https://github.com/d1g1tinc/fairlight/issues/10)
