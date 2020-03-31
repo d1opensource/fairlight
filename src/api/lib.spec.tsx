@@ -235,6 +235,10 @@ test('applyHeaders', () => {
   })
 })
 
-describe('cloneHeaders', () => {
+test('cloneHeaders', () => {
+  expect(cloneHeaders({'content-type': 'text/plain'})).toEqual({
+    'content-type': 'text/plain'
+  })
+  // shouldn't be the same obj
   expect(cloneHeaders({})).not.toBe({})
 })
