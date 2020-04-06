@@ -262,14 +262,26 @@ export class ApiRequestManager {
    */
   private maybeThrowApiError(
     params: ApiRequestParams,
-    {status, body: responseBody, bodyType: responseType}: RequestFetcherResponse
+    {status, body, bodyType}: RequestFetcherResponse
   ): void {
     if (Array.isArray(params.successCodes)) {
       if (params.successCodes.every((code) => status !== code)) {
-        throw new ApiError(status, responseBody, responseType)
+        throw new ApiError(
+          params.method ?? DEFAULT_REQUEST_METHOD,
+          params.url,
+          status,
+          body,
+          bodyType
+        )
       }
     } else if (status < 200 || status > 299) {
-      throw new ApiError(status, responseBody, responseType)
+      throw new ApiError(
+        params.method ?? DEFAULT_REQUEST_METHOD,
+        params.url,
+        status,
+        body,
+        bodyType
+      )
     }
   }
 }

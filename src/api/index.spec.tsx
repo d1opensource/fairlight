@@ -103,9 +103,11 @@ describe('errors', () => {
 
     await expect(
       api.request({method: 'GET', url: '/endpoint'})
-    ).rejects.toEqual(new ApiError(400, errorJson))
+    ).rejects.toEqual(new ApiError('GET', '/endpoint', 400, errorJson))
 
-    expect(onError).toBeCalledWith(new ApiError(400, errorJson, 'json'))
+    expect(onError).toBeCalledWith(
+      new ApiError('GET', '/endpoint', 400, errorJson, 'json')
+    )
 
     // try unsubscribing from error handler
     onError.mockClear()
@@ -115,34 +117,52 @@ describe('errors', () => {
   })
 
   it('throws an error if it doesnt match the specified success types', async () => {
-    const requestParams: ApiRequestParams = {
-      method: 'GET',
-      url: '/endpoint',
-      successCodes: [400, 401]
-    }
     const errorJson = {test: 'error'}
     fetchMock.mockResponseOnce(JSON.stringify(errorJson), {
       headers: {'content-type': 'application/json'},
       status: 400
     })
 
-    expect(await api.request(requestParams)).toEqual({test: 'error'})
+    expect(
+      await api.request({
+        url: '/endpoint',
+        successCodes: [400, 401]
+      })
+    ).toEqual({test: 'error'})
 
     fetchMock.mockResponseOnce(JSON.stringify(errorJson), {
       headers: {'content-type': 'application/json'},
       status: 401
     })
 
-    expect(await api.request(requestParams)).toEqual({test: 'error'})
+    expect(
+      await api.request({
+        method: 'GET',
+        url: '/endpoint',
+        successCodes: [400, 401]
+      })
+    ).toEqual({test: 'error'})
 
     fetchMock.mockResponseOnce(JSON.stringify({success: true}), {
       headers: {'content-type': 'application/json'},
       status: 200
     })
 
-    await expect(api.request(requestParams)).rejects.toEqual(
-      new ApiError(200, {success: true})
-    )
+    await expect(
+      api.request({
+        method: 'GET',
+        url: '/endpoint',
+        successCodes: [400, 401]
+      })
+    ).rejects.toEqual(new ApiError('GET', '/endpoint', 200, {success: true}))
+
+    // try with no method
+    await expect(
+      api.request({
+        url: '/endpoint',
+        successCodes: [400, 401]
+      })
+    ).rejects.toEqual(new ApiError('GET', '/endpoint', 200, {success: true}))
   })
 
   it('parses api error response json', async () => {
@@ -156,9 +176,9 @@ describe('errors', () => {
       parseResponseJson: (response) => ({parsedError: response['test_error']})
     })
 
-    await expect(
-      api.request({method: 'GET', url: '/endpoint'})
-    ).rejects.toEqual(new ApiError(400, {parsedError: 'badError'}, 'json'))
+    await expect(api.request({url: '/endpoint'})).rejects.toEqual(
+      new ApiError('GET', '/endpoint', 400, {parsedError: 'badError'}, 'json')
+    )
   })
 })
 
@@ -289,7 +309,6 @@ describe('fetch policies', () => {
     })
 
     const params: ApiRequestParams<'GET', {}> = {
-      method: 'GET',
       url: '/endpoint'
     }
 
@@ -313,7 +332,7 @@ describe('fetch policies', () => {
     await new Promise((resolve) => setTimeout(resolve))
 
     expect(errorHandler).toBeCalledWith(
-      new ApiError(400, errorResponseBody, 'json')
+      new ApiError('GET', '/endpoint', 400, errorResponseBody, 'json')
     )
   })
 })
