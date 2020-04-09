@@ -61,21 +61,66 @@ it('loads api data', async () => {
   })
 })
 
-it('returns api errors', async () => {
-  const error = new ApiError(400, {error: true}, 'json')
-  ;(api.request as jest.Mock).mockRejectedValue(error)
+describe('errors', () => {
+  it('returns api errors', async () => {
+    const error = new ApiError('GET', '/endpoint', 400, {error: true}, 'json')
+    ;(api.request as jest.Mock).mockRejectedValue(error)
 
-  const {result, waitForNextUpdate} = renderHook(
-    () => useApiQuery({method: 'GET', url: '/endpoint'}),
-    {wrapper}
-  )
+    const {result, waitForNextUpdate} = renderHook(
+      () => useApiQuery({method: 'GET', url: '/endpoint'}),
+      {wrapper}
+    )
 
-  await waitForNextUpdate()
+    await waitForNextUpdate()
 
-  expect(result.current[0]).toEqual({
-    data: null,
-    loading: false,
-    error
+    expect(result.current[0]).toEqual({
+      data: null,
+      loading: false,
+      error
+    })
+  })
+
+  it('can throw an error if `useErrorBoundary` is set', async () => {
+    const error = new ApiError('GET', '/endpoint', 400, {error: true}, 'json')
+    ;(api.request as jest.Mock).mockRejectedValue(error)
+
+    const {result, waitForNextUpdate} = renderHook(
+      () =>
+        useApiQuery(
+          {method: 'GET', url: '/endpoint'},
+          {useErrorBoundary: true}
+        ),
+      {wrapper}
+    )
+
+    await waitForNextUpdate({suppressErrors: true})
+
+    expect(result.error).toEqual(error)
+  })
+
+  it('can throw an error by default if `useErrorBoundary` is set in context', async () => {
+    const error = new ApiError('GET', '/endpoint', 400, {error: true}, 'json')
+    ;(api.request as jest.Mock).mockRejectedValue(error)
+
+    const {result, waitForNextUpdate} = renderHook(
+      () => useApiQuery({method: 'GET', url: '/endpoint'}),
+      {
+        wrapper: function Wrapper({children}) {
+          return (
+            <ApiProvider
+              api={api}
+              defaults={{useApiQuery: {useErrorBoundary: true}}}
+            >
+              {children}
+            </ApiProvider>
+          )
+        }
+      }
+    )
+
+    await waitForNextUpdate({suppressErrors: true})
+
+    expect(result.error).toEqual(error)
   })
 })
 
@@ -181,7 +226,7 @@ describe('cache', () => {
         return (
           <ApiProvider
             api={api}
-            defaultFetchPolicies={{useApiQuery: defaultFetchPolicy}}
+            defaults={{useApiQuery: {fetchPolicy: defaultFetchPolicy}}}
           >
             {children}
           </ApiProvider>
@@ -472,7 +517,7 @@ describe('refetch', () => {
 
     await waitForNextUpdate()
 
-    const error = new ApiError(400, {error: true}, 'json')
+    const error = new ApiError('GET', '/endpoint', 400, {error: true}, 'json')
     ;(api.request as jest.Mock).mockRejectedValue(error)
 
     act(() => {

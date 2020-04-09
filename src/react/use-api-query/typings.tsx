@@ -75,6 +75,14 @@ export interface UseApiQueryOptions {
    * until new data is received.
    */
   dontReinitialize?: boolean
+
+  /**
+   * If `true`, will `throw` in the case of an error, which can then
+   * be handled in an error boundary.
+   *
+   * Defaults to `false`, unless overridden via `ApiProvider#defaults`
+   */
+  useErrorBoundary?: boolean
 }
 
 export type FalsyValue = '' | 0 | false | undefined | null

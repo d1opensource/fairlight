@@ -4,34 +4,49 @@ import {Api} from '../api'
 import {ApiRequestFetchPolicy} from '../api/typings'
 
 const DEFAULT_QUERY_FETCH_POLICY = 'cache-and-fetch'
+const DEFAULT_QUERY_USE_ERROR_BOUNDARY = false
 
 interface ApiContext {
   api: Api
-  defaultFetchPolicies: ApiProviderDefaultFetchPolicies
+  defaults: ApiProviderDefaults
 }
 
-interface ApiProviderDefaultFetchPolicies {
-  useApiQuery: ApiRequestFetchPolicy
+interface ApiProviderDefaults {
+  useApiQuery: UseApiQueryDefaults
 }
 
-export const ApiContext = createContext<ApiContext>({
-  api: new Api(),
-  defaultFetchPolicies: {
-    useApiQuery: DEFAULT_QUERY_FETCH_POLICY
+interface UseApiQueryDefaults {
+  fetchPolicy: ApiRequestFetchPolicy
+  useErrorBoundary: boolean
+}
+
+const defaultApi = new Api()
+
+const DEFAULT_API_CONTEXT: ApiContext = {
+  api: defaultApi,
+  defaults: {
+    useApiQuery: {
+      fetchPolicy: DEFAULT_QUERY_FETCH_POLICY,
+      useErrorBoundary: DEFAULT_QUERY_USE_ERROR_BOUNDARY
+    }
   }
-})
+}
+
+export const ApiContext = createContext<ApiContext>(DEFAULT_API_CONTEXT)
 
 export interface ApiProviderProps {
   /**
    * The API instance to use
    */
-  api: Api
+  api?: Api
 
   /**
    * Sets the default `fetchPolicy` which is used by `useApiQuery`
    * if no `fetchPolicy` is provided to the hook.
    */
-  defaultFetchPolicies?: Partial<ApiProviderDefaultFetchPolicies>
+  defaults?: {
+    useApiQuery?: Partial<UseApiQueryDefaults>
+  }
 }
 
 export const ApiProvider: React.FC<ApiProviderProps> = function ApiProvider(
@@ -40,11 +55,16 @@ export const ApiProvider: React.FC<ApiProviderProps> = function ApiProvider(
   return (
     <ApiContext.Provider
       value={{
-        api: props.api,
-        defaultFetchPolicies: {
-          useApiQuery:
-            props.defaultFetchPolicies?.useApiQuery ||
-            DEFAULT_QUERY_FETCH_POLICY
+        api: props.api || DEFAULT_API_CONTEXT.api,
+        defaults: {
+          useApiQuery: {
+            fetchPolicy:
+              props.defaults?.useApiQuery?.fetchPolicy ||
+              DEFAULT_API_CONTEXT.defaults.useApiQuery.fetchPolicy,
+            useErrorBoundary:
+              props.defaults?.useApiQuery?.useErrorBoundary ||
+              DEFAULT_API_CONTEXT.defaults.useApiQuery.useErrorBoundary
+          }
         }
       }}
     >

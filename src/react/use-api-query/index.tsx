@@ -31,10 +31,16 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
 ): [UseApiQueryData<TResponseBody>, UseApiQueryActions<TResponseBody>] {
   const {
     api,
-    defaultFetchPolicies: {useApiQuery: defaultFetchPolicy}
+    defaults: {
+      useApiQuery: {
+        fetchPolicy: defaultFetchPolicy,
+        useErrorBoundary: defaultUseErrorBoundary
+      }
+    }
   } = useContext(ApiContext)
 
-  const fetchPolicy = opts.fetchPolicy || defaultFetchPolicy
+  const fetchPolicy = opts.fetchPolicy ?? defaultFetchPolicy
+  const useErrorBoundary = opts.useErrorBoundary ?? defaultUseErrorBoundary
 
   const [state, dispatch] = useReducer(useApiQueryReducer, INITIAL_STATE)
 
@@ -136,6 +142,13 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
       error: derivedState.error
     }
   }, [derivedState.loading, derivedState.data, derivedState.error])
+
+  /**
+   * Optionally throw the error to handle in error boundary
+   */
+  if (returnData.error && useErrorBoundary) {
+    throw returnData.error
+  }
 
   const handleSetData: UseApiQuerySetData<TResponseBody> = (data) => {
     if (fetchPolicy === 'no-cache' || !params) {

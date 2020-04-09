@@ -700,6 +700,7 @@ Standard request params. See [Api#request()](#requestparams-object-opts-object) 
 | `fetchPolicy?: 'no-cache' \| 'cache-first' \| 'fetch-first' \| 'cache-only' \| 'cache-and-fetch'` | The fetch policy to use for the request. This is passed directly to `api.request` under the hood. By default, this is set to `cache-and-fetch` but can be overridden via `ApiProvider`                                                                                     |
 | `deduplicate?: boolean`                                                                           | If `true`, will deduplicate equivalent requests, ensuring that it only runs once concurrently and returns an equal promise for each parallel call. This is `true` by default for `GET` requests, and `false` by default for `POST`, `PUT`, `PATCH`, and `DELETE` requests. |
 | `dontReinitialize?: boolean`                                                                      | If true, will keep `data` from previous requests until new data is received (ie. it won't reinitialize to `null`).                                                                                                                                                         |
+| `useErrorBoundary?: boolean`                                                                      | If true, will throw on error that will bubble up to an error boundary. This is `false` by default, but can be overridden globally via `ApiProvider`.                                                                                                                       |
 
 Returns `[queryData, queryActions]`:
 
@@ -734,8 +735,10 @@ const api = new Api({baseUrl: 'http://your-api.com/api'})
 const App = () => (
   <ApiProvider
     api={api}
-    defaultFetchPolicies={{
-      useApiQuery: 'cache-and-fetch'
+    defaults={{
+      useApiQuery: {
+        fetchPolicy: 'cache-and-fetch'
+      }
     }}
   >
     {/* render app here */}
@@ -749,16 +752,17 @@ const App = () => (
 
 `props`:
 
-| Field                          | Description                                                                      |
-| ------------------------------ | -------------------------------------------------------------------------------- |
-| `api: Api`                     | `Api` instance to provide to your app.                                           |
-| `defaultFetchPolicies: object` | Sets the default `fetchPolicy` to use for hooks. See below for possible options. |
+| Field              | Description                                                         |
+| ------------------ | ------------------------------------------------------------------- |
+| `api: Api`         | `Api` instance to provide to your app.                              |
+| `defaults: object` | Sets the defaults to use for hooks. See below for possible options. |
 
-`defaultFetchPolicies` fields:
+`defaults` fields:
 
-| Field                                                                                            | Description                                                                                                     |
-| ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| `useApiQuery: 'no-cache' \| 'cache-first' \| 'fetch-first' \| 'cache-only' \| 'cache-and-fetch'` | The `fetchPolicy` to use by default for the `useApiQuery` hook. Defaults to `cache-and-fetch` if not specified. |
+| Field                                                                                                         | Description                                                                                                     |
+| ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `useApiQuery.fetchPolicy?: 'no-cache' \| 'cache-first' \| 'fetch-first' \| 'cache-only' \| 'cache-and-fetch'` | The `fetchPolicy` to use by default for the `useApiQuery` hook. Defaults to `cache-and-fetch` if not specified. |
+| `useApiQuery.useErrorBoundary?: boolean`                                                                      | The `useErrorBoundary` to use by default for the `useApiQuery` hook. Defaults to `true` if not specified.       |
 
 </details>
 
