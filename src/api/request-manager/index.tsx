@@ -1,14 +1,10 @@
-import EventEmitter from 'eventemitter3'
+import Observable from 'zen-observable'
+import PushStream from 'zen-push'
 
 import {DEFAULT_FETCH_POLICY, DEFAULT_REQUEST_METHOD} from '../constants'
 import {ApiError} from '../errors'
 import {GenericCache} from '../generic-cache'
-import {
-  applyHeaders,
-  cloneHeaders,
-  createSubscription,
-  getParamsId
-} from '../lib'
+import {applyHeaders, cloneHeaders, getParamsId} from '../lib'
 import {ApiRequestFetcher} from '../request-fetcher'
 import {
   ApiHeaders,
@@ -28,10 +24,6 @@ function identity<T>(value: T): T {
   return value
 }
 
-const RECEIVED_RESPONSE_BODY_EVENT = 'received_response_body'
-
-const ERROR_EVENT = 'error'
-
 /**
  * The request manager is responsible for managing API requests.
  *
@@ -46,7 +38,11 @@ export class ApiRequestManager {
 
   defaultFetchPolicy: ApiRequestFetchPolicy
 
-  private emitter = new EventEmitter()
+  private responseBodyStream = new PushStream<
+    [ApiRequestParams, ResponseBody]
+  >()
+
+  private errorStream = new PushStream<Error>()
 
   private requestFetcher: RequestFetcher
 
@@ -144,21 +140,15 @@ export class ApiRequestManager {
   /**
    * Configuring an error handler to be called on error
    */
-  onReceivedResponseBody = (
-    listener: (params: ApiRequestParams, responseBody: ResponseBody) => void
-  ) => {
-    return createSubscription(
-      this.emitter,
-      RECEIVED_RESPONSE_BODY_EVENT,
-      listener
-    )
+  get onReceivedResponseBody(): Observable<[ApiRequestParams, ResponseBody]> {
+    return this.responseBodyStream.observable
   }
 
   /**
    * Configuring an error handler to be called on error
    */
-  onError = (listener: (error: Error) => void) => {
-    return createSubscription(this.emitter, ERROR_EVENT, listener)
+  get onError(): Observable<Error> {
+    return this.errorStream.observable
   }
 
   /**
@@ -209,12 +199,12 @@ export class ApiRequestManager {
       const {body: responseBody} = parsedResponse
 
       if (fetchPolicy !== 'no-cache') {
-        this.emitter.emit(RECEIVED_RESPONSE_BODY_EVENT, params, responseBody)
+        this.responseBodyStream.next([params, responseBody as ResponseBody])
       }
 
       return responseBody
     } catch (error) {
-      this.emitter.emit(ERROR_EVENT, error)
+      this.errorStream.next(error)
       throw error
     }
   }

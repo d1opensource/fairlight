@@ -1,5 +1,3 @@
-import EventEmitter from 'eventemitter3'
-
 import {DEFAULT_REQUEST_METHOD} from './constants'
 import {ApiHeaders, ApiRequestMethod, ApiRequestParams} from './typings'
 
@@ -73,31 +71,4 @@ export function applyHeaders(prevHeaders: ApiHeaders, headers: ApiHeaders) {
 
 export function cloneHeaders(headers: ApiHeaders): ApiHeaders {
   return {...headers}
-}
-
-export function genCacheUpdateEvent(
-  params: ApiRequestParams<ApiRequestMethod>
-) {
-  return `cacheUpdate.${getParamsId(params)}`
-}
-
-/**
- * Adds an event listener to the given emitter using the provided event key.
- *
- * Returns an "unsubscribe" function that will remove the listener once called.
- *
- * @param emitter Event emitter to subscribe to
- * @param event Event key
- * @param listener Event listener
- */
-export function createSubscription(
-  emitter: EventEmitter,
-  event: string,
-  listener: (...args: any[]) => void
-): () => void {
-  emitter.on(event, listener)
-
-  return () => {
-    emitter.off(event, listener)
-  }
 }

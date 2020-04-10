@@ -55,9 +55,9 @@ const [{data, loading, error}] = useApiQuery({url: `/users/${id}`})
     - [`requestInProgress(params: object)`](#requestinprogressparams-object)
     - [`writeCachedResponse(params: object, responseBody?: Blob | object | string)`](#writecachedresponseparams-object-responsebody-blob--object--string)
     - [`readCachedResponse(params: object)`](#readcachedresponseparams-object)
-    - [`onCacheUpdate(params: object, listener: Function)`](#oncacheupdateparams-object-listener-function)
+    - [`onCacheUpdate(params: object)`](#oncacheupdateparams-object)
     - [`setDefaultHeader(key: string, value: string)`](#setdefaultheaderkey-string-value-string)
-    - [`onError(listener: Function)`](#onerrorlistener-function)
+    - [`onError`](#onerror)
 
 ## Installation & Setup
 
@@ -1145,19 +1145,19 @@ The cached response body, or `undefined` on cache miss.
 
 </details>
 
-#### `onCacheUpdate(params: object, listener: Function)`
+#### `onCacheUpdate(params: object)`
 
-Subscribes to cache updates for a given param's response.
+Returns an observable which pushes each new response matching the given params.
 
 <details><summary>Example</summary>
 
 ```jsx
-const unsubscribe = api.onCacheUpdate(UserEndpoints.list(), (users) => {
+const subscription = api.onCacheUpdate(UserEndpoints.list().subscribe((users) => {
   // handle updated `users` in cache
 })
 
-// invoke returned function to unsubscribe:
-unsubscribe()
+// invoke subscription's `unsubscribe` method to unsubscribe:
+subscription.unsubscribe()
 ```
 
 </details>
@@ -1190,21 +1190,21 @@ api.setDefaultHeader('X-Auth-Token', '123456')
 
 </details>
 
-#### `onError(listener: Function)`
+#### `onError`
 
-Subscribes to Api errors. This is useful for error reporting or to handle an invalid auth token by logging out.
+An observable for each api error. This is useful for error reporting or to handle an invalid auth token by logging out.
 
 <details><summary>Example</summary>
 
 ```jsx
 import {ApiError} from 'fairlight'
 
-api.onError((error) => {
+const subscription = api.onError.subscribe((error) => {
   // handle error
 })
 
-// invoke returned function to unsubscribe:
-unsubscribe()
+// invoke subscription's `unsubscribe` method to unsubscribe:
+subscription.unsubscribe()
 ```
 
 </details>

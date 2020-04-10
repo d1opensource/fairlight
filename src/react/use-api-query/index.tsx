@@ -96,13 +96,13 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
       return undefined
     }
 
-    const unsubscribe = api.onCacheUpdate(params, (responseBody) => {
+    const subscription = api.onCacheUpdate(params).subscribe((responseBody) => {
       dispatch(useApiQueryActions.setData(responseBody))
     })
 
     if (fetchPolicy === 'cache-only' && cachedData) {
       // no need to make a request
-      return unsubscribe
+      return subscription.unsubscribe
     }
 
     ;(async function requestQueryData() {
@@ -129,7 +129,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
       }
     })()
 
-    return unsubscribe
+    return subscription.unsubscribe
   }, [paramsId])
 
   /**

@@ -99,7 +99,7 @@ describe('errors', () => {
     })
 
     const onError = jest.fn()
-    const unsubscribe = api.onError(onError)
+    const subscription = api.onError.subscribe(onError)
 
     await expect(
       api.request({method: 'GET', url: '/endpoint'})
@@ -111,7 +111,7 @@ describe('errors', () => {
 
     // try unsubscribing from error handler
     onError.mockClear()
-    unsubscribe()
+    subscription.unsubscribe()
     await expect(api.request({method: 'GET', url: '/endpoint'})).rejects
     expect(onError).not.toBeCalled()
   })
@@ -323,7 +323,7 @@ describe('fetch policies', () => {
 
     const errorHandler = jest.fn()
 
-    api.onError(errorHandler)
+    api.onError.subscribe(errorHandler)
 
     expect(await api.request(params, {fetchPolicy: 'cache-and-fetch'})).toEqual(
       cachedResponse
@@ -508,7 +508,7 @@ test('manual cache read/write and listener', async () => {
   const response = {a: 1}
 
   const onCacheUpdate = jest.fn()
-  const unsubscribe = api.onCacheUpdate(params, onCacheUpdate)
+  const subscription = api.onCacheUpdate(params).subscribe(onCacheUpdate)
 
   api.writeCachedResponse(params, response)
   expect(api.readCachedResponse(params)).toEqual(response)
@@ -516,7 +516,7 @@ test('manual cache read/write and listener', async () => {
 
   // unsubscribe and assert it isn't called for future updates
   onCacheUpdate.mockClear()
-  unsubscribe()
+  subscription.unsubscribe()
   api.writeCachedResponse(params, {b: 2})
   expect(onCacheUpdate).not.toBeCalled()
 })
