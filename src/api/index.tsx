@@ -126,7 +126,7 @@ export class Api {
   ) => {
     const paramsId = getParamsId(params)
     this.responseBodyCache.set(paramsId, responseBody)
-    this.getCachedResponseStream(params).next(responseBody)
+    this.getCacheUpdateStream(params).next(responseBody)
   }
 
   /**
@@ -151,10 +151,14 @@ export class Api {
   onCacheUpdate = <TResponseBody extends ResponseBody>(
     params: ApiRequestParams<ApiRequestMethod, TResponseBody>
   ): Observable<TResponseBody> => {
-    return this.getCachedResponseStream(params).observable
+    return this.getCacheUpdateStream(params).observable
   }
 
-  private getCachedResponseStream<TResponseBody extends ResponseBody>(
+  /**
+   * Returns the cache update stream for the given request params.
+   * If one does not already exist, create it.
+   */
+  private getCacheUpdateStream<TResponseBody extends ResponseBody>(
     params: ApiRequestParams<ApiRequestMethod, TResponseBody>
   ): PushStream<TResponseBody> {
     const paramsId = getParamsId(params)
