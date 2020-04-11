@@ -35,6 +35,7 @@ const [{data, loading, error}] = useApiQuery({url: `/users/${id}`})
   - [Success response codes](#success-response-codes)
   - [Custom query string serialization](#custom-query-string-serialization)
   - [Setting default headers (ie. an auth token) for all requests](#setting-default-headers-ie-an-auth-token-for-all-requests)
+  - [Testing](#testing)
   - [Error handling](#error-handling)
   - [Typescript](#typescript)
   - [Usage with Redux](#usage-with-redux)
@@ -447,6 +448,41 @@ api.setDefaultHeader('X-Auth-Token', token)
 ```
 
 Now, all of your queries will pass this additional header to requests.
+
+### Testing
+
+Currently, the recommended method of testing is to mock `fetch` at the source. [`jest-fetch-mock`](https://github.com/jefflau/jest-fetch-mock#readme) is a useful tool for this.
+
+Here is an example of testing a `useApiQuery` using [`React Testing Library`](https://testing-library.com/docs/react-testing-library/intro):
+
+```tsx
+// Component file:
+const MyComponent = (props) => {
+  const [user] = useApiQuery({url: `/users/${id}`})
+
+  if (user.error) {
+    return <p>'An error occurred'</p>
+  }
+
+  if (user.loading) {
+    return <p>'Loading ...'</p>
+  }
+
+  return <p>User: {user.firstName}</p>
+}
+
+// Test file:
+import {render, waitFor, screen} from '@testing-library/react'
+
+it('renders the user name', async () => {
+  fetchMock.mockResponseOnce(JSON.stringify({firstName: 'Thomas'}), {
+    headers: {'content-type': 'application/json'}
+  })
+
+  const {getByText} = render(<MyComponent id />)
+  await waitFor(() => getByText('User: Thomas'))
+})
+```
 
 ### Error handling
 
