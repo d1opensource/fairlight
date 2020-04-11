@@ -42,6 +42,6 @@ export type UseApiMutationReturnFunction<TMutationArgs extends any[]> = (
   ...args: TMutationArgs
 ) => Promise<void>
 
-interface UseApiMutationData {
+export interface UseApiMutationData {
   mutating: boolean
 }
