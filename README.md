@@ -301,9 +301,9 @@ return (
 )
 ```
 
-- This will _always_ make a fetch to the user, no matter what `fetchPolicy` is
+- This will _always_ make a fetch to the user, no matter what `fetchPolicy` is.
 - If `fetchPolicy: 'no-cache'` is passed to `useApiQuery`, the cache will _not_ be updated after the fetch completes. If `fetchPolicy` is set to anything else, the cache will be updated after the request completes.
-- If `deduplicate` is `true` for the query and there is currently a request in flight, it will not make an additional request. You can force a new fetch by passing a `deduplicate` option: `refresh({ deduplicate: false })`.
+- By default, `deduplicate` is always `false`, meaning it will always make a fresh request. You can override this by passing a `deduplicate` option: `refresh({ deduplicate: true })`.
 - If you want to reinitialize `data` to `null` when you call `refresh`, you can do so by passing a `reinitialize` option: `refresh({ reinitialize: true })`
 
 Full documentation is available [here](#useapiqueryparams-object-opts-object).

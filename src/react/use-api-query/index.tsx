@@ -187,7 +187,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
     try {
       const data = await api.request(params, {
         fetchPolicy: fetchPolicy === 'no-cache' ? 'no-cache' : 'fetch-first',
-        deduplicate: refetchOpts.deduplicate ?? opts.deduplicate
+        deduplicate: refetchOpts.deduplicate ?? false
       })
       dispatch(useApiQueryActions.success({requestId, paramsId, data}))
     } catch (error) {

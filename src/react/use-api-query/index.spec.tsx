@@ -435,7 +435,7 @@ describe('refetch', () => {
       ;(api.request as jest.Mock).mockResolvedValue(response1)
 
       const {result, waitForNextUpdate} = renderHook(
-        () => useApiQuery(params, {fetchPolicy, deduplicate: false}),
+        () => useApiQuery(params, {fetchPolicy}),
         {wrapper}
       )
 
@@ -484,10 +484,9 @@ describe('refetch', () => {
     const response1 = {name: 'Test'}
     ;(api.request as jest.Mock).mockResolvedValue(response1)
 
-    const {result, waitForNextUpdate} = renderHook(
-      () => useApiQuery(params, {deduplicate: false}),
-      {wrapper}
-    )
+    const {result, waitForNextUpdate} = renderHook(() => useApiQuery(params), {
+      wrapper
+    })
 
     // eslint-disable-next-line
     await waitForNextUpdate()
