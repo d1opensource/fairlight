@@ -9,6 +9,7 @@ import {
 } from '../../api/typings'
 import {ApiContext} from '../context'
 import {
+  MutationApiHelpers,
   UseApiMutationParams,
   UseApiMutationReturnFunction,
   UseApiMutationReturnValue
@@ -22,61 +23,29 @@ export function useApiMutation<
 >(
   params: UseApiMutationParams<TMutationArgs, TMutationReturnValue>
 ): UseApiMutationReturnValue<TMutationArgs> {
-  const {
-    api,
-    defaults: {
-      useApiMutation: {fetchPolicy: defaultFetchPolicy}
-    }
-  } = useContext(ApiContext)
+  const mutationApiHelpers = useMutationApiHelpers()
   const [mutating, {registerMutation, deregisterMutation}] = useIsMutating()
-
-  /**
-   * Same as `api.request` but uses default fetch policy from context
-   */
-  const _request: Api['request'] = <TResponseBody extends ResponseBody>(
-    params: ApiRequestParams<ApiRequestMethod, TResponseBody>,
-    options: ApiRequestOptions = {}
-  ) => {
-    return api.request(params, {
-      ...options,
-      fetchPolicy: options.fetchPolicy || defaultFetchPolicy
-    })
-  }
 
   const mutate: UseApiMutationReturnFunction<TMutationArgs> = async (
     ...mutationArgs
   ) => {
     registerMutation()
 
-    const mutationContext = {mutationArgs: mutationArgs}
     const mutator = params.mutation(...mutationArgs)
-
     let returnValue: TMutationReturnValue
 
     try {
-      returnValue = await mutator({
-        request: _request,
-        requestInProgress: api.requestInProgress,
-        readCachedResponse: api.readCachedResponse,
-        writeCachedResponse: api.writeCachedResponse,
-        buildUrl: api.buildUrl,
-        setDefaultHeader: api.setDefaultHeader,
-        baseUrl: api.baseUrl
-      })
+      returnValue = await mutator(mutationApiHelpers)
     } catch (error) {
       if (params.onError) {
-        params.onError(error, mutationContext)
-        return
-      } else {
-        throw error
+        return params.onError(error, {mutationArgs})
       }
+      throw error
     } finally {
       deregisterMutation()
     }
 
-    if (params.onSuccess) {
-      params.onSuccess(returnValue, mutationContext)
-    }
+    params.onSuccess?.(returnValue, {mutationArgs})
   }
 
   return [mutate, {mutating}]
@@ -97,4 +66,36 @@ function useIsMutating(): [
       deregisterMutation: () => setNumOccurringMutations((prev) => prev - 1)
     }
   ]
+}
+
+function useMutationApiHelpers(): MutationApiHelpers {
+  const {
+    api,
+    defaults: {
+      useApiMutation: {fetchPolicy: defaultFetchPolicy}
+    }
+  } = useContext(ApiContext)
+
+  /**
+   * Same as `api.request` but uses default fetch policy from context
+   */
+  const _request: Api['request'] = <TResponseBody extends ResponseBody>(
+    params: ApiRequestParams<ApiRequestMethod, TResponseBody>,
+    options: ApiRequestOptions = {}
+  ) => {
+    return api.request(params, {
+      ...options,
+      fetchPolicy: options.fetchPolicy || defaultFetchPolicy
+    })
+  }
+
+  return {
+    request: _request,
+    requestInProgress: api.requestInProgress,
+    readCachedResponse: api.readCachedResponse,
+    writeCachedResponse: api.writeCachedResponse,
+    buildUrl: api.buildUrl,
+    setDefaultHeader: api.setDefaultHeader,
+    baseUrl: api.baseUrl
+  }
 }

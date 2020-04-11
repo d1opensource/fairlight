@@ -15,7 +15,7 @@ export interface UseApiMutationParams<
   ) => void
 }
 
-type MutationApiHelpers = Pick<
+export type MutationApiHelpers = Pick<
   Api,
   | 'request'
   | 'requestInProgress'
