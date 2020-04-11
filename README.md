@@ -198,9 +198,10 @@ import {UserEndpoints} from 'my-app/endpoints'
 const CreateUserForm = (props) => {
   const [createUser, {mutating: creatingUser}] = useApiMutation({
     mutation: (firstName: string, lastName: string) => async (api) => {
-      await api.request(UserEndpoints.create({firstName, lastName}))
+      return api.request(UserEndpoints.create({firstName, lastName}))
     },
-    onError: (error) => console.error(error)
+    onError: (error) => console.error(error),
+    onSuccess: (user) => console.log(`Created user ${firstName}`)
   })
 
   return (
@@ -715,11 +716,11 @@ Returns `[queryData, queryActions]`:
 import {useApiQuery} from 'fairlight'
 
 const [createUser, {creating: creatingUser}] = useApiMutation({
-  mutation: (firstName: string, lastName: string) => async (api) => {
-    const user = await api.request(UserEndpoints.create({firstName, lastName}))
-    // perform post-mutation logic (navigate, success notification, etc.)
+  mutation: (firstName: string, lastName: string) => (api) => {
+    return api.request(UserEndpoints.create({firstName, lastName}))
   },
   onError: (error) => console.error(error)
+  onSuccess: (user) => console.log(`Created user ${user.firstName}`)
 })
 ```
 
@@ -729,10 +730,11 @@ const [createUser, {creating: creatingUser}] = useApiMutation({
 
 `params` fields:
 
-| Field      | Description                                                                                             |
-| ---------- | ------------------------------------------------------------------------------------------------------- |
-| `mutation` | The mutation function. The return value is called with an object containing all [`api`](#api) methods.  |
-| `onError`  | Invoked if the mutation returns a rejected promise. This eliminates the need for a `try`/`catch` block. |
+| Field       | Description                                                                                             |
+| ----------- | ------------------------------------------------------------------------------------------------------- |
+| `mutation`  | The mutation function. The return value is called with an object containing all [`api`](#api) methods.  |
+| `onError`   | Invoked if the mutation returns a rejected promise. This eliminates the need for a `try`/`catch` block. |
+| `onSuccess` | Invoked if the mutation returns a resolved promise.                                                     |
 
 Returns `[mutate, mutationData]`:
 

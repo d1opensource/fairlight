@@ -95,7 +95,42 @@ it('defaults fetch policy via ApiProvider', async () => {
   )
 })
 
+it('calls onSuccess with the resolved value on success', async () => {
+  const onSuccess = jest.fn()
+  const onError = jest.fn()
+
+  const {result, waitForNextUpdate} = renderHook(
+    () =>
+      useApiMutation({
+        mutation: (firstName: string, lastName: string) => async () => {
+          return {resolved: 'value'}
+        },
+        onSuccess,
+        onError
+      }),
+    {wrapper}
+  )
+  expect(result.current[1].mutating).toEqual(false)
+
+  act(() => {
+    result.current[0]('Test', 'User')
+  })
+  expect(result.current[1].mutating).toEqual(true)
+
+  await waitForNextUpdate()
+
+  expect(result.current[1].mutating).toEqual(false)
+  expect(onSuccess).toBeCalledWith(
+    {resolved: 'value'},
+    {
+      mutationArgs: ['Test', 'User']
+    }
+  )
+  expect(onError).not.toBeCalled()
+})
+
 it('calls onError on an error', async () => {
+  const onSuccess = jest.fn()
   const onError = jest.fn()
 
   const {result, waitForNextUpdate} = renderHook(
@@ -104,7 +139,8 @@ it('calls onError on an error', async () => {
         mutation: (firstName: string, lastName: string) => async () => {
           throw new Error('Something happened')
         },
-        onError
+        onError,
+        onSuccess
       }),
     {wrapper}
   )
@@ -121,6 +157,7 @@ it('calls onError on an error', async () => {
   expect(onError).toBeCalledWith(new Error('Something happened'), {
     mutationArgs: ['Test', 'User']
   })
+  expect(onSuccess).not.toBeCalled()
 })
 
 it('throws an error if no onError is provided', async () => {

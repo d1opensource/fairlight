@@ -16,8 +16,11 @@ import {
 
 export * from './typings'
 
-export function useApiMutation<TMutationArgs extends any[]>(
-  params: UseApiMutationParams<TMutationArgs>
+export function useApiMutation<
+  TMutationArgs extends any[],
+  TMutationReturnValue
+>(
+  params: UseApiMutationParams<TMutationArgs, TMutationReturnValue>
 ): UseApiMutationReturnValue<TMutationArgs> {
   const {
     api,
@@ -45,9 +48,13 @@ export function useApiMutation<TMutationArgs extends any[]>(
   ) => {
     registerMutation()
 
+    const mutationContext = {mutationArgs: mutationArgs}
+    const mutator = params.mutation(...mutationArgs)
+
+    let returnValue: TMutationReturnValue
+
     try {
-      const mutator = params.mutation(...mutationArgs)
-      await mutator({
+      returnValue = await mutator({
         request: _request,
         requestInProgress: api.requestInProgress,
         readCachedResponse: api.readCachedResponse,
@@ -58,12 +65,17 @@ export function useApiMutation<TMutationArgs extends any[]>(
       })
     } catch (error) {
       if (params.onError) {
-        params.onError(error, {mutationArgs: mutationArgs})
+        params.onError(error, mutationContext)
+        return
       } else {
         throw error
       }
     } finally {
       deregisterMutation()
+    }
+
+    if (params.onSuccess) {
+      params.onSuccess(returnValue, mutationContext)
     }
   }
 
