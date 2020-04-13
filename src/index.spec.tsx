@@ -10,12 +10,10 @@ test('lib exports', () => {
     'useApi',
     'useApiQuery',
     'useApiMutation',
-    'withApi',
     'ApiContext',
     'ApiProvider',
     'HttpEndpoints',
-    'RestEndpoints',
-    'dynamicPath'
+    'RestEndpoints'
   ]
 
   for (const expectedExport of expectedExports) {

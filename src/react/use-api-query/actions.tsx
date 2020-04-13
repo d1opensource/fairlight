@@ -13,6 +13,7 @@ export const useApiQueryActions = {
     fetchPolicy: ApiRequestFetchPolicy
     cachedData: ResponseBody | null
     dontReinitialize?: boolean
+    initialData?: ResponseBody
   }>(),
 
   /**

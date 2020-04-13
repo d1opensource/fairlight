@@ -40,7 +40,8 @@ export const useApiQueryReducer = createReducer<
       loading: true,
       error: null,
       data:
-        action.payload.cachedData ||
+        action.payload.initialData ??
+        action.payload.cachedData ??
         (action.payload.dontReinitialize ? prev.data : null)
     }
   },

@@ -1,9 +1,10 @@
-import EventEmitter from 'eventemitter3'
+import Observable from 'zen-observable'
+import PushStream from 'zen-push'
 
 import {DEFAULT_FETCH_POLICY, READ_CACHE_POLICIES} from './constants'
 import {ApiCacheMissError} from './errors'
 import {GenericCache} from './generic-cache'
-import {createSubscription, genCacheUpdateEvent, getParamsId} from './lib'
+import {getParamsId} from './lib'
 import {ApiRequestManager} from './request-manager'
 import {
   ApiParseResponseJson,
@@ -14,14 +15,12 @@ import {
   ResponseBody
 } from './typings'
 
-const ERROR_EVENT = 'error'
-
 export class Api {
   private responseBodyCache = new GenericCache<ResponseBody>()
 
   private requestManager: ApiRequestManager
 
-  private emitter = new EventEmitter()
+  private cacheUpdateStreams = new Map<string, PushStream<ResponseBody>>()
 
   constructor(
     params: {
@@ -42,9 +41,10 @@ export class Api {
     } = {}
   ) {
     this.requestManager = new ApiRequestManager(params)
-    this.requestManager.onReceivedResponseBody(this.writeCachedResponse)
-    this.requestManager.onError((error) =>
-      this.emitter.emit(ERROR_EVENT, error)
+    this.requestManager.onReceivedResponseBody.subscribe(
+      ([params, responseBody]) => {
+        this.writeCachedResponse(params, responseBody)
+      }
     )
   }
 
@@ -109,8 +109,9 @@ export class Api {
     params: ApiRequestParams<ApiRequestMethod, TResponseBody>,
     responseBody: TResponseBody
   ) => {
-    this.responseBodyCache.set(getParamsId(params), responseBody)
-    this.emitter.emit(genCacheUpdateEvent(params), responseBody)
+    const paramsId = getParamsId(params)
+    this.responseBodyCache.set(paramsId, responseBody)
+    this.getCacheUpdateStream(params).next(responseBody)
   }
 
   /**
@@ -133,11 +134,28 @@ export class Api {
    * Subscribes to cache updates for a given param's response
    */
   onCacheUpdate = <TResponseBody extends ResponseBody>(
-    params: ApiRequestParams<ApiRequestMethod, TResponseBody>,
-    listener: (responseBody: TResponseBody) => void
-  ): (() => void) => {
-    const event = genCacheUpdateEvent(params)
-    return createSubscription(this.emitter, event, listener)
+    params: ApiRequestParams<ApiRequestMethod, TResponseBody>
+  ): Observable<TResponseBody> => {
+    return this.getCacheUpdateStream(params).observable
+  }
+
+  /**
+   * Returns the cache update stream for the given request params.
+   * If one does not already exist, create it.
+   */
+  private getCacheUpdateStream<TResponseBody extends ResponseBody>(
+    params: ApiRequestParams<ApiRequestMethod, TResponseBody>
+  ): PushStream<TResponseBody> {
+    const paramsId = getParamsId(params)
+
+    let pushStream = this.cacheUpdateStreams.get(paramsId)
+
+    if (!pushStream) {
+      pushStream = new PushStream<TResponseBody>()
+      this.cacheUpdateStreams.set(paramsId, pushStream)
+    }
+
+    return pushStream as PushStream<TResponseBody>
   }
 
   /**
@@ -161,7 +179,7 @@ export class Api {
   /**
    * Configuring an error handler to be called on error
    */
-  onError = (listener: (error: Error) => void) => {
-    return createSubscription(this.emitter, ERROR_EVENT, listener)
+  get onError() {
+    return this.requestManager.onError
   }
 }
