@@ -15,7 +15,6 @@ afterEach(cleanup)
 
 beforeEach(() => {
   api = {
-    defaultFetchPolicy: 'no-cache',
     onCacheUpdate: jest.fn(() => ({
       subscribe: () => {
         const subscription = {unsubscribe: () => null}

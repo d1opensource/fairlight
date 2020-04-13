@@ -1,14 +1,13 @@
 import Observable from 'zen-observable'
 import PushStream from 'zen-push'
 
-import {READ_CACHE_POLICIES} from './constants'
+import {DEFAULT_FETCH_POLICY, READ_CACHE_POLICIES} from './constants'
 import {ApiCacheMissError} from './errors'
 import {GenericCache} from './generic-cache'
 import {getParamsId} from './lib'
 import {ApiRequestManager} from './request-manager'
 import {
   ApiParseResponseJson,
-  ApiRequestFetchPolicy,
   ApiRequestMethod,
   ApiRequestOptions,
   ApiRequestParams,
@@ -29,13 +28,6 @@ export class Api {
        * Base URL of API to prefix all requests with
        */
       baseUrl?: string
-      /**
-       * When set, overrides the fetch policy for all requests.
-       *
-       * Note that this differs from the `useApiQuery` default fetch policy,
-       * which can be configured using `ApiProvider`.
-       */
-      defaultFetchPolicy?: ApiRequestFetchPolicy
       /**
        * When provided, all API JSON request bodies will be run
        * through this transformation function before the API request
@@ -64,20 +56,13 @@ export class Api {
   }
 
   /**
-   * Returns the `baseUrl` which was set via the constructor.
-   */
-  get defaultFetchPolicy() {
-    return this.requestManager.defaultFetchPolicy
-  }
-
-  /**
    * Makes an API request
    */
   request = <TResponseBody extends ResponseBody>(
     params: ApiRequestParams<ApiRequestMethod, TResponseBody>,
     options: ApiRequestOptions = {}
   ): Promise<TResponseBody> => {
-    const {fetchPolicy = this.defaultFetchPolicy} = options
+    const {fetchPolicy = DEFAULT_FETCH_POLICY} = options
 
     if (!READ_CACHE_POLICIES.includes(fetchPolicy)) {
       return this.requestManager.getResponseBody<TResponseBody>(

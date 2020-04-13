@@ -45,13 +45,13 @@ const [{data, loading, error}] = useApiQuery({url: `/users/${id}`})
 - [Feature Roadmap](#feature-roadmap)
 - [API Documentation](#api-documentation)
   - [`useApiQuery(params: object, opts?: object)`](#useapiqueryparams-object-opts-object)
+  - [`useApiMutation(params: object)`](#useapimutationparams-object)
   - [`ApiProvider`](#apiprovider)
   - [`HttpEndpoints`](#httpendpoints)
   - [`RestEndpoints`](#restendpoints)
   - [`Api`](#api)
     - [`Constructor`](#constructor)
     - [`baseUrl`](#baseurl)
-    - [`defaultFetchPolicy`](#defaultfetchpolicy)
     - [`request(params: object, opts?: object)`](#requestparams-object-opts-object)
     - [`requestInProgress(params: object)`](#requestinprogressparams-object)
     - [`writeCachedResponse(params: object, responseBody?: Blob | object | string)`](#writecachedresponseparams-object-responsebody-blob--object--string)
@@ -187,40 +187,39 @@ const MyComponent = (props) => {
 }
 ```
 
-To make one-off requests (ie. form submissions, deletions, etc), you can use the `Api` client instance directly:
+To create an event handler for form submissions, deletions, etc., use the `useApiMutation` hook.
+
+The hook takes a curried mutation handler which is passed the [`api`](#api) for making queries. It returns a mutation function and a `mutating` loading flag which you can use for a loading state.
 
 ```jsx
 import React, {useState} from 'react'
-import {useApi} from 'fairlight'
+import {useApiMutation} from 'fairlight'
 
 import {UserEndpoints} from 'my-app/endpoints'
 
-const DeleteUser = (props) => {
-  const api = useApi()
-  const [deleting, setDeleting] = useState(false)
-
-  const handleDelete = async () => {
-    setDeleting(true)
-
-    try {
-      await api.request(UserEndpoints.destroy(props.userId))
-      // navigate to a different page, etc.
-    } catch (error) {
-      // handle error
-    } finally {
-      setDeleting(false)
-    }
-  }
+const CreateUserForm = (props) => {
+  const [createUser, {mutating: creatingUser}] = useApiMutation({
+    mutation: (firstName: string, lastName: string) => async (api) => {
+      return api.request(UserEndpoints.create({firstName, lastName}))
+    },
+    onError: (error) => console.error(error),
+    onSuccess: (user) => console.log(`Created user ${firstName}`)
+  })
 
   return (
     <>
-      <button type='button' onClick={handleDeleteUser} disabled={deleting}>
-        Delete User
-      </button>
+      {creatingUser && <LoadingSpinner />}
+      <CreateUserForm
+        onSubmit={(firstName, lastName) => {
+          createUser(firstName, lastName)
+        }}
+      />
     </>
   )
 }
 ```
+
+_(`useApiMutation` API documentation is [here](#useapimutationparams-object))_
 
 ## Guide
 
@@ -258,19 +257,7 @@ const App = () => (
 )
 ```
 
-Similarly to `useApiQuery`, you can pass a `fetchPolicy` when calling `api.request` directly:
-
-```jsx
-const users = await api.request(UserEndpoints.list(), {
-  fetchPolicy: 'cache-only'
-})
-```
-
-`api.request` has a default `fetchPolicy` of `fetch-first`, but can be overridden in the `Api` constructor:
-
-```jsx
-const api = new Api({defaultFetchPolicy: 'no-cache'})
-```
+Note that calling `api.request()` directly always defaults `fetchPolicy` to `'no-cache'`, but you can override this per-request if you'd like to interact with the cache.
 
 #### Using the cache directly
 
@@ -341,24 +328,25 @@ For example, suppose we have a query to get a user:
 const [user] = useApiQuery(UserEndpoints.findById(1))
 ```
 
-Now, suppose we also have a form that updates a user. This API request happens to returns the updated user, so we can use `setData` to update our `useApiQuery` data with the most up-to-date user.
+Now, suppose we also have a mutation which updates a user. This API request happens to returns the updated user, so we can use `setData` to update our `useApiQuery` data with the most up-to-date user.
 
 ```tsx
-const api = useApi()
 const [user, userQueryActions] = useApiQuery(UserEndpoints.findById(1))
 
-const handleSubmit = async (values) => {
-  try {
-    const updatedUser = await api.request(
-      UserEndpoints.partialUpdate(1, values)
-    )
+const [saveUser] = useApiMutation({
+  mutation: (values) => (api) => {
+    return api.request(UserEndpoints.partialUpdate(1, values))
+  },
 
+  onSuccess: (updatedUser) => {
     userQueryActions.setData(updatedUser)
     // ↑↑ this updates `user.data`
-  } catch (error) {
+  },
+
+  onError: (error) => {
     // etc
   }
-}
+})
 ```
 
 Note: if `fetchPolicy` is not `no-cache`, this will persist directly to the response cache.
@@ -809,6 +797,48 @@ Returns `[queryData, queryActions]`:
 
 </details>
 
+### `useApiMutation(params: object)`
+
+<details><summary>Example</summary>
+
+```jsx
+import {useApiQuery} from 'fairlight'
+
+const [createUser, {creating: creatingUser}] = useApiMutation({
+  mutation: (firstName: string, lastName: string) => (api) => {
+    return api.request(UserEndpoints.create({firstName, lastName}))
+  },
+  onError: (error) => console.error(error)
+  onSuccess: (user) => console.log(`Created user ${user.firstName}`)
+})
+```
+
+</details>
+
+<details><summary>Details</summary>
+
+`params` fields:
+
+| Field       | Description                                                                                             |
+| ----------- | ------------------------------------------------------------------------------------------------------- |
+| `mutation`  | The mutation function. The return value is called with an object containing all [`api`](#api) methods.  |
+| `onError`   | Invoked if the mutation returns a rejected promise. This eliminates the need for a `try`/`catch` block. |
+| `onSuccess` | Invoked if the mutation returns a resolved promise.                                                     |
+
+Returns `[mutate, mutationData]`:
+
+`mutate` function:
+
+Invokes the mutation. This will call your provided `mutation` function with the `api` helpers. The `mutating` flag will be set to `true` while the mutation is occurring, and `false` once it completes.
+
+`mutationData` fields:
+
+| Field               | Description                                    |
+| ------------------- | ---------------------------------------------- |
+| `mutating: boolean` | `true` if a mutation is currently in progress. |
+
+</details>
+
 ### `ApiProvider`
 
 Provides an `Api` instance to a React app.
@@ -826,6 +856,9 @@ const App = () => (
     defaults={{
       useApiQuery: {
         fetchPolicy: 'cache-and-fetch'
+      },
+      useApiMutation: {
+        fetchPolicy: 'fetch-first'
       }
     }}
   >
@@ -847,10 +880,11 @@ const App = () => (
 
 `defaults` fields:
 
-| Field                                                                                                         | Description                                                                                                     |
-| ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `useApiQuery.fetchPolicy?: 'no-cache' \| 'cache-first' \| 'fetch-first' \| 'cache-only' \| 'cache-and-fetch'` | The `fetchPolicy` to use by default for the `useApiQuery` hook. Defaults to `cache-and-fetch` if not specified. |
-| `useApiQuery.useErrorBoundary?: boolean`                                                                      | The `useErrorBoundary` to use by default for the `useApiQuery` hook. Defaults to `true` if not specified.       |
+| Field                                                                                                             | Description                                                                                                                                     |
+| ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `useApiQuery.fetchPolicy?: 'no-cache' \| 'cache-first' \| 'fetch-first' \| 'cache-only' \| 'cache-and-fetch'`     | The `fetchPolicy` to use by default for the `useApiQuery` hook. Defaults to `cache-and-fetch` if not specified.                                 |
+| `useApiQuery.useErrorBoundary?: boolean`                                                                          | The `useErrorBoundary` to use by default for the `useApiQuery` hook. Defaults to `true` if not specified.                                       |
+| `useMutationQuery.fetchPolicy: 'no-cache' \| 'cache-first' \| 'fetch-first' \| 'cache-only' \| 'cache-and-fetch'` | The `fetchPolicy` to use by default for `api.request` calls within `useApiMutation` mutation handlers. Defaults to `no-cache` if not specified. |
 
 </details>
 
@@ -1013,7 +1047,6 @@ import {Api} from 'fairlight'
 
 const api = new Api({
   baseUrl: 'http://your-api.com/api',
-  defaultFetchPolicy: 'fetch-first',
   serializeRequestJson: (body) => camelize(body),
   serializeRequestJson: (body) => snakify(body)
 })
@@ -1025,22 +1058,17 @@ const api = new Api({
 
 Constructor fields:
 
-| Field                                                                                                    | Description                                                                                                             |
-| -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `baseUrl?: string`                                                                                       | Base URL of the API. This will prefix all requests.                                                                     |
-| `defaultFetchPolicy?: 'no-cache' \| 'cache-first' \| 'fetch-first' \| 'cache-only' \| 'cache-and-fetch'` | Sets the default `fetchPolicy` for all `api.request` calls. Defaults to `fetch-first`.                                  |
-| `serializeRequestJson?(body: object): object`                                                            | When provided, all JSON request bodies will be run through this transformation function before the API request.         |
-| `parseResponseJson?(body: object): object`                                                               | When provided, all JSON response bodies will be run through this transformation function before returning the response. |
+| Field                                         | Description                                                                                                             |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `baseUrl?: string`                            | Base URL of the API. This will prefix all requests.                                                                     |
+| `serializeRequestJson?(body: object): object` | When provided, all JSON request bodies will be run through this transformation function before the API request.         |
+| `parseResponseJson?(body: object): object`    | When provided, all JSON response bodies will be run through this transformation function before returning the response. |
 
 </details>
 
 #### `baseUrl`
 
 The `baseUrl` that was set via the `Api` constructor.
-
-#### `defaultFetchPolicy`
-
-The `defaultFetchPolicy` that was set via the `Api` constructor.
 
 #### `request(params: object, opts?: object)`
 

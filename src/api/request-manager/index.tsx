@@ -9,7 +9,6 @@ import {ApiRequestFetcher} from '../request-fetcher'
 import {
   ApiHeaders,
   ApiParseResponseJson,
-  ApiRequestFetchPolicy,
   ApiRequestMethod,
   ApiRequestOptions,
   ApiRequestParams,
@@ -36,8 +35,6 @@ function identity<T>(value: T): T {
 export class ApiRequestManager {
   baseUrl: string
 
-  defaultFetchPolicy: ApiRequestFetchPolicy
-
   private responseBodyStream = new PushStream<
     [ApiRequestParams, ResponseBody]
   >()
@@ -63,10 +60,6 @@ export class ApiRequestManager {
      */
     baseUrl?: string
     /**
-     * Base URL of API to prefix all requests with
-     */
-    defaultFetchPolicy?: ApiRequestFetchPolicy
-    /**
      * When provided, all API JSON request bodies will be run
      * through this transformation function before the API request
      */
@@ -79,7 +72,6 @@ export class ApiRequestManager {
     requestFetcher?: RequestFetcher
   }) {
     this.baseUrl = params.baseUrl || ''
-    this.defaultFetchPolicy = params.defaultFetchPolicy || DEFAULT_FETCH_POLICY
     this.requestFetcher = params.requestFetcher || new ApiRequestFetcher()
     this.serializeRequestJson = params.serializeRequestJson || identity
     this.parseResponseJson = params.parseResponseJson || identity
@@ -173,7 +165,7 @@ export class ApiRequestManager {
     params: ApiRequestParams,
     options: ApiRequestOptions
   ): Promise<ResponseBody | null> => {
-    const {fetchPolicy = this.defaultFetchPolicy} = options
+    const {fetchPolicy = DEFAULT_FETCH_POLICY} = options
     try {
       const {body, headers} = this.getRequestHeadersAndBody(params)
 
