@@ -1,5 +1,3 @@
-import EventEmitter from 'eventemitter3'
-
 import {DEFAULT_REQUEST_METHOD} from './constants'
 import {ApiHeaders, ApiRequestMethod, ApiRequestParams} from './typings'
 
@@ -26,13 +24,13 @@ function serializeHeaders(paramHeaders?: ApiHeaders): string {
     return ''
   }
 
-  const headers = applyHeaders(new Headers(), paramHeaders)
+  const headers = applyHeaders({}, paramHeaders)
 
   const headerPairs: string[] = []
 
-  headers.forEach((value, key) => {
+  for (const [key, value] of Object.entries(headers)) {
     headerPairs.push(`${key}:${value};`)
-  })
+  }
 
   headerPairs.sort()
 
@@ -58,42 +56,19 @@ function uniqueCodes(codes: number[]): number[] {
 }
 
 /**
- * Given a fetch `Headers` object and ApiHeaders (object or array of key-value pairs),
- * returns a new `Headers` object with the ApiHeaders added to the original `Headers`.
+ * Given an origin ApiHeaders object and ApiHeaders object,
+ * returns a new ApiHeaders object with the new headers applied.
  */
-export function applyHeaders(prevHeaders: Headers, apiHeaders: ApiHeaders) {
-  const headers = new Headers(prevHeaders)
+export function applyHeaders(prevHeaders: ApiHeaders, headers: ApiHeaders) {
+  const nextHeaders = cloneHeaders(prevHeaders)
 
-  for (const key of Object.keys(apiHeaders)) {
-    headers.set(key, apiHeaders[key])
+  for (const key of Object.keys(headers)) {
+    nextHeaders[key.toLowerCase()] = headers[key]
   }
 
-  return headers
+  return nextHeaders
 }
 
-export function genCacheUpdateEvent(
-  params: ApiRequestParams<ApiRequestMethod>
-) {
-  return `cacheUpdate.${getParamsId(params)}`
-}
-
-/**
- * Adds an event listener to the given emitter using the provided event key.
- *
- * Returns an "unsubscribe" function that will remove the listener once called.
- *
- * @param emitter Event emitter to subscribe to
- * @param event Event key
- * @param listener Event listener
- */
-export function createSubscription(
-  emitter: EventEmitter,
-  event: string,
-  listener: (...args: any[]) => void
-): () => void {
-  emitter.on(event, listener)
-
-  return () => {
-    emitter.off(event, listener)
-  }
+export function cloneHeaders(headers: ApiHeaders): ApiHeaders {
+  return {...headers}
 }

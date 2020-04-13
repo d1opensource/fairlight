@@ -16,20 +16,12 @@ export class ApiRequestFetcher implements RequestFetcher {
   getResponse = async (
     params: RequestFetcherParams
   ): Promise<RequestFetcherResponse> => {
-    const request = this.createRequest(params)
-    const response = await fetch(request)
-    return this.parseResponseBody(response, params)
-  }
-
-  /**
-   * Generates a `Request` instance to be passed directly to `fetch`
-   */
-  private createRequest(params: RequestFetcherParams): Request {
-    return new Request(params.url, {
+    const response = await fetch(params.url, {
       method: params.method,
       body: params.body,
       headers: params.headers
     })
+    return this.parseResponseBody(response, params)
   }
 
   /**
@@ -78,7 +70,7 @@ export class ApiRequestFetcher implements RequestFetcher {
       return null
     }
 
-    if (contentType === 'application/json') {
+    if (contentType.includes('application/json')) {
       return 'json'
     }
 
