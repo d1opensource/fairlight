@@ -16,7 +16,12 @@ afterEach(cleanup)
 beforeEach(() => {
   api = {
     defaultFetchPolicy: 'no-cache',
-    onCacheUpdate: jest.fn(() => () => null),
+    onCacheUpdate: jest.fn(() => ({
+      subscribe: () => {
+        const subscription = {unsubscribe: () => null}
+        return subscription
+      }
+    })),
     readCachedResponse: jest.fn(),
     writeCachedResponse: jest.fn(),
     request: jest.fn()
@@ -373,11 +378,12 @@ describe('cache', () => {
     for (const fetchPolicy of fetchPolicies) {
       // set up onCacheUpdate listener
       let listener
-      const unsubscribe = jest.fn()
-      const onCacheUpdate = jest.fn((params, _listener) => {
+      const subscribe = jest.fn((_listener) => {
         listener = _listener
-        return unsubscribe
+        return {unsubscribe}
       })
+      const unsubscribe = jest.fn()
+      const onCacheUpdate = jest.fn((params) => ({subscribe}))
       ;(api.onCacheUpdate as jest.Mock) = onCacheUpdate
 
       const {result, waitForNextUpdate} = renderHook(
@@ -402,7 +408,8 @@ describe('cache', () => {
 
       expect(api.request).toBeCalledWith(params, {fetchPolicy})
 
-      expect(onCacheUpdate).toBeCalledWith(params, listener)
+      expect(onCacheUpdate).toBeCalledWith(params)
+      expect(subscribe).toBeCalledWith(listener)
 
       const response2 = {name: 'Test 2'}
       act(() => {
@@ -736,5 +743,31 @@ describe('setData', () => {
         ...nextData
       })
     }
+  })
+})
+
+it('allows initialData to be set', async () => {
+  const response = {name: 'Test'}
+  ;(api.request as jest.Mock).mockResolvedValue(response)
+
+  const initialData = {name: 'Initial'}
+
+  const {result, waitForNextUpdate} = renderHook(
+    () => useApiQuery({method: 'GET', url: '/endpoint'}, {initialData}),
+    {wrapper}
+  )
+
+  expect(result.current[0]).toEqual({
+    data: initialData,
+    loading: true,
+    error: null
+  })
+
+  await waitForNextUpdate()
+
+  expect(result.current[0]).toEqual({
+    data: response,
+    loading: false,
+    error: null
   })
 })

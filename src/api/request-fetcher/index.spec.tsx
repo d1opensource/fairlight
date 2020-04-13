@@ -10,6 +10,18 @@ beforeEach(() => {
   fetchMock.mockClear()
 })
 
+it('parses application/json with charset', async () => {
+  fetchMock.mockResponseOnce(JSON.stringify({num: 12345}), {
+    headers: {'content-type': 'application/json; charset=utf-8'}
+  })
+  expect(
+    await requestFetcher.getResponse({
+      url: 'http://test.com/endpoint',
+      method: 'GET'
+    })
+  ).toEqual({body: {num: 12345}, bodyType: 'json', status: 200})
+})
+
 it('does not parse the response body if it cant determine the response type', async () => {
   // no content type
   fetchMock.mockResponseOnce(JSON.stringify({num: 12345}), {
@@ -34,7 +46,7 @@ it('does not parse the response body if it cant determine the response type', as
   ).toEqual({status: 200, body: null, bodyType: null})
 })
 
-it('throws a TypeError if an invalid responseBody is passed', async () => {
+it('throws a TypeError if an invalid body is passed', async () => {
   // unknown content type
   fetchMock.mockResponseOnce(JSON.stringify({num: 12345}), {
     headers: {'Content-Type': 'unknown'}

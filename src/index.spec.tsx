@@ -9,12 +9,10 @@ test('lib exports', () => {
     'ApiError',
     'useApi',
     'useApiQuery',
-    'withApi',
     'ApiContext',
     'ApiProvider',
     'HttpEndpoints',
-    'RestEndpoints',
-    'dynamicPath'
+    'RestEndpoints'
   ]
 
   for (const expectedExport of expectedExports) {

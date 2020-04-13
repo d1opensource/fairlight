@@ -27,7 +27,7 @@ export * from './typings'
  */
 export function useApiQuery<TResponseBody extends ResponseBody>(
   params: ApiRequestParams<ApiRequestMethod, TResponseBody> | FalsyValue,
-  opts: UseApiQueryOptions = {}
+  opts: UseApiQueryOptions<TResponseBody> = {}
 ): [UseApiQueryData<TResponseBody>, UseApiQueryActions<TResponseBody>] {
   const {
     api,
@@ -76,6 +76,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
           requestId,
           paramsId,
           fetchPolicy,
+          initialData: opts.initialData,
           cachedData,
           dontReinitialize: opts.dontReinitialize
         })
@@ -95,13 +96,13 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
       return undefined
     }
 
-    const unsubscribe = api.onCacheUpdate(params, (responseBody) => {
+    const subscription = api.onCacheUpdate(params).subscribe((responseBody) => {
       dispatch(useApiQueryActions.setData(responseBody))
     })
 
     if (fetchPolicy === 'cache-only' && cachedData) {
       // no need to make a request
-      return unsubscribe
+      return subscription.unsubscribe
     }
 
     ;(async function requestQueryData() {
@@ -128,7 +129,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
       }
     })()
 
-    return unsubscribe
+    return subscription.unsubscribe
   }, [paramsId])
 
   /**

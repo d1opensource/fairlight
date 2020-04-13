@@ -38,6 +38,7 @@ const [{data, loading, error}] = useApiQuery({url: `/users/${id}`})
   - [Error handling](#error-handling)
   - [Typescript](#typescript)
   - [Usage with Redux](#usage-with-redux)
+  - [Server-side rendering (SSR)](#server-side-rendering-ssr)
 - [Motivation](#motivation)
 - [Comparison to similar libraries](#comparison-to-similar-libraries)
 - [Feature Roadmap](#feature-roadmap)
@@ -54,9 +55,9 @@ const [{data, loading, error}] = useApiQuery({url: `/users/${id}`})
     - [`requestInProgress(params: object)`](#requestinprogressparams-object)
     - [`writeCachedResponse(params: object, responseBody?: Blob | object | string)`](#writecachedresponseparams-object-responsebody-blob--object--string)
     - [`readCachedResponse(params: object)`](#readcachedresponseparams-object)
-    - [`onCacheUpdate(params: object, listener: Function)`](#oncacheupdateparams-object-listener-function)
+    - [`onCacheUpdate(params: object)`](#oncacheupdateparams-object)
     - [`setDefaultHeader(key: string, value: string)`](#setdefaultheaderkey-string-value-string)
-    - [`onError(listener: Function)`](#onerrorlistener-function)
+    - [`onError`](#onerror)
 
 ## Installation & Setup
 
@@ -629,6 +630,58 @@ function* loadUsers() {
 }
 ```
 
+### Server-side rendering (SSR)
+
+This library uses `fetch` internally to make requests, so you'll need to globally polyfill `fetch` on the server. One popular option is [`isomorphic-unfetch`](https://www.npmjs.com/package/isomorphic-unfetch).
+
+---
+
+To make requests on the server (ex. using [`next.js`](https://nextjs.org/)), you can create an `api` instance and make requests with it:
+
+```tsx
+import {Api} from 'fairlight'
+import {UserEndpoints} from 'my-app/endpoints'
+
+const api = new Api()
+
+// fetch data server-side:
+export async function getServerSideProps(context) {
+  const user = await api.request(UserEndpoints.findById(context.params.id))
+  return {props: {user}}
+}
+
+// define your component:
+const UserProfile = (props) => {
+  // we can now use `props.user`
+}
+
+export default UserProfile
+```
+
+If you need to share an `api` instance across your server, you can create an `api` singleton file and import that into each file that needs it.
+
+Note that instances of `useApiQuery` will return a `loading` flag for the initial render, and will _not_ run the request since it's performed in a `useEffect` hook. If you'd like to render data on the server and _also_ trigger a new fetch for the same endpoint using `useApiQuery`, you can pass `initialData` to the hook using the props passed by the server fetch:
+
+```tsx
+import {Api} from 'fairlight'
+import {UserEndpoints} from 'my-app/endpoints'
+
+const api = new Api()
+
+export async function getServerSideProps(context) {
+  const user = await api.request(UserEndpoints.findById(context.params.id))
+  return {props: {user}}
+}
+
+const UserProfile = (props) => {
+  const [user] = useApiQuery(UserEndpoints.findById(user.id), {
+    initialData: props.user
+  })
+}
+
+export default UserProfile
+```
+
 ## Motivation
 
 At [d1g1t](https://github.com/d1g1tinc), we make over 400 REST API calls in our enterprise investment advisor platform. Over time, as we started using React hooks and wanted to introduce caching optimizations, it was clear that we needed to overhaul our internal REST API fetching library to use patterns that scale with our app.
@@ -646,7 +699,6 @@ It's most similar to the out-of-the-box, batteries-included solution that `apoll
 Here is the current roadmap of features we have in mind:
 
 - Suspense API [#11](https://github.com/d1g1tinc/fairlight/issues/11)
-- SSR support [#12](https://github.com/d1g1tinc/fairlight/issues/12)
 - Mutations & Optimistic responses [#28](https://github.com/d1g1tinc/fairlight/issues/28)
 - Opt-in cache data normalization [#7](https://github.com/d1g1tinc/fairlight/issues/7)
 - Cache redirects [#10](https://github.com/d1g1tinc/fairlight/issues/10)
@@ -1093,19 +1145,19 @@ The cached response body, or `undefined` on cache miss.
 
 </details>
 
-#### `onCacheUpdate(params: object, listener: Function)`
+#### `onCacheUpdate(params: object)`
 
-Subscribes to cache updates for a given param's response.
+Returns an observable which pushes each new response matching the given params.
 
 <details><summary>Example</summary>
 
 ```jsx
-const unsubscribe = api.onCacheUpdate(UserEndpoints.list(), (users) => {
+const subscription = api.onCacheUpdate(UserEndpoints.list().subscribe((users) => {
   // handle updated `users` in cache
 })
 
-// invoke returned function to unsubscribe:
-unsubscribe()
+// invoke subscription's `unsubscribe` method to unsubscribe:
+subscription.unsubscribe()
 ```
 
 </details>
@@ -1138,21 +1190,21 @@ api.setDefaultHeader('X-Auth-Token', '123456')
 
 </details>
 
-#### `onError(listener: Function)`
+#### `onError`
 
-Subscribes to Api errors. This is useful for error reporting or to handle an invalid auth token by logging out.
+An observable for each api error. This is useful for error reporting or to handle an invalid auth token by logging out.
 
 <details><summary>Example</summary>
 
 ```jsx
 import {ApiError} from 'fairlight'
 
-api.onError((error) => {
+const subscription = api.onError.subscribe((error) => {
   // handle error
 })
 
-// invoke returned function to unsubscribe:
-unsubscribe()
+// invoke subscription's `unsubscribe` method to unsubscribe:
+subscription.unsubscribe()
 ```
 
 </details>
