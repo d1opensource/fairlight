@@ -3,8 +3,8 @@ import {terser as minify} from 'rollup-plugin-terser'
 
 const external = [
   'typesafe-actions',
-  'eventemitter3',
-  'hoist-non-react-statics',
+  'zen-observable',
+  'zen-push',
   'react' // peer dependency
 ]
 
