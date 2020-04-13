@@ -328,24 +328,25 @@ For example, suppose we have a query to get a user:
 const [user] = useApiQuery(UserEndpoints.findById(1))
 ```
 
-Now, suppose we also have a form that updates a user. This API request happens to returns the updated user, so we can use `setData` to update our `useApiQuery` data with the most up-to-date user.
+Now, suppose we also have a mutation which updates a user. This API request happens to returns the updated user, so we can use `setData` to update our `useApiQuery` data with the most up-to-date user.
 
 ```tsx
-const api = useApi()
 const [user, userQueryActions] = useApiQuery(UserEndpoints.findById(1))
 
-const handleSubmit = async (values) => {
-  try {
-    const updatedUser = await api.request(
-      UserEndpoints.partialUpdate(1, values)
-    )
+const [saveUser] = useApiMutation({
+  mutation: (values) => (api) => {
+    return api.request(UserEndpoints.partialUpdate(1, values))
+  },
 
+  onSuccess: (updatedUser) => {
     userQueryActions.setData(updatedUser)
     // ↑↑ this updates `user.data`
-  } catch (error) {
+  },
+
+  onError: (error) => {
     // etc
   }
-}
+})
 ```
 
 Note: if `fetchPolicy` is not `no-cache`, this will persist directly to the response cache.
