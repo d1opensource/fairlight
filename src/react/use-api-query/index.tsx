@@ -100,9 +100,11 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
       dispatch(useApiQueryActions.setData(responseBody))
     })
 
+    const cleanup = () => subscription.unsubscribe()
+
     if (fetchPolicy === 'cache-only' && cachedData) {
       // no need to make a request
-      return subscription.unsubscribe
+      return cleanup
     }
 
     ;(async function requestQueryData() {
@@ -129,7 +131,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
       }
     })()
 
-    return subscription.unsubscribe
+    return cleanup
   }, [paramsId])
 
   /**
