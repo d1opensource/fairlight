@@ -1,4 +1,4 @@
-import {getParamsId} from '../../api/lib'
+import {apiRequestId} from '../../api/lib'
 import {ApiRequestParams} from '../../api/typings'
 import {useApiQueryActions} from './actions'
 import {useApiQueryReducer} from './reducer'
@@ -40,7 +40,7 @@ it('stores a successful response data if it matches the most recent request', ()
     state,
     useApiQueryActions.newRequest({
       requestId,
-      paramsId: getParamsId(params),
+      paramsId: apiRequestId(params),
       fetchPolicy: 'no-cache',
       cachedData: null
     })
@@ -52,7 +52,7 @@ it('stores a successful response data if it matches the most recent request', ()
     state,
     useApiQueryActions.success({
       requestId,
-      paramsId: getParamsId(params),
+      paramsId: apiRequestId(params),
       data
     })
   )
@@ -65,7 +65,7 @@ it('stores a successful response data if it matches the most recent request', ()
     state,
     useApiQueryActions.failure({
       requestId,
-      paramsId: getParamsId(params),
+      paramsId: apiRequestId(params),
       error
     })
   )
@@ -93,7 +93,7 @@ it('stores a successful response data if it matches the most recent request', ()
     state,
     useApiQueryActions.success({
       requestId: wrongId,
-      paramsId: getParamsId(params),
+      paramsId: apiRequestId(params),
       data
     })
   )
@@ -104,7 +104,7 @@ it('stores a successful response data if it matches the most recent request', ()
     state,
     useApiQueryActions.failure({
       requestId: wrongId,
-      paramsId: getParamsId(params),
+      paramsId: apiRequestId(params),
       error
     })
   )
@@ -137,7 +137,7 @@ it('only starts a refetch request if the request params are correct', () => {
     state,
     useApiQueryActions.newRequest({
       requestId,
-      paramsId: getParamsId(params),
+      paramsId: apiRequestId(params),
       fetchPolicy: 'no-cache',
       cachedData: null
     })
@@ -147,7 +147,7 @@ it('only starts a refetch request if the request params are correct', () => {
     state,
     useApiQueryActions.success({
       requestId,
-      paramsId: getParamsId(params),
+      paramsId: apiRequestId(params),
       data
     })
   )
@@ -160,7 +160,7 @@ it('only starts a refetch request if the request params are correct', () => {
     state,
     useApiQueryActions.refetchRequest({
       requestId: refetchId, // new symbol
-      paramsId: getParamsId(params) // same params
+      paramsId: apiRequestId(params) // same params
     })
   )
 
@@ -185,7 +185,7 @@ it('only starts a refetch request if the request params are correct', () => {
     state,
     useApiQueryActions.newRequest({
       requestId,
-      paramsId: getParamsId(params),
+      paramsId: apiRequestId(params),
       fetchPolicy: 'no-cache',
       cachedData: null
     })
@@ -195,7 +195,7 @@ it('only starts a refetch request if the request params are correct', () => {
     state,
     useApiQueryActions.success({
       requestId,
-      paramsId: getParamsId(params),
+      paramsId: apiRequestId(params),
       data
     })
   )
@@ -206,7 +206,7 @@ it('only starts a refetch request if the request params are correct', () => {
     state,
     useApiQueryActions.refetchRequest({
       requestId: Symbol(),
-      paramsId: getParamsId({method: 'GET', url: '/refetch-endpoint'})
+      paramsId: apiRequestId({method: 'GET', url: '/refetch-endpoint'})
     })
   )
 

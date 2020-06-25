@@ -6,7 +6,7 @@ import {ApiHeaders, ApiRequestMethod, ApiRequestParams} from './typings'
  *
  * This is used to identify the request for caching and other purposes.
  */
-export function getParamsId(
+export function apiRequestId(
   params: ApiRequestParams<ApiRequestMethod>
 ): string {
   return JSON.stringify([

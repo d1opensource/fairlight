@@ -7,6 +7,7 @@ test('lib exports', () => {
     'Api',
     'ApiCacheMissError',
     'ApiError',
+    'apiRequestId',
     'useApi',
     'useApiQuery',
     'useApiMutation',

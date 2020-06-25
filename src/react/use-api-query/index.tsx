@@ -1,7 +1,7 @@
 import {useContext, useEffect, useMemo, useReducer, useRef} from 'react'
 
+import {apiRequestId} from '../../api'
 import {READ_CACHE_POLICIES} from '../../api/constants'
-import {getParamsId} from '../../api/lib'
 import {
   ApiRequestMethod,
   ApiRequestParams,
@@ -44,7 +44,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
 
   const [state, dispatch] = useReducer(useApiQueryReducer, INITIAL_STATE)
 
-  const paramsId: string | null = params ? getParamsId(params) : null
+  const paramsId: string | null = params ? apiRequestId(params) : null
 
   /**
    * Used to identify the current request for concurrency management
