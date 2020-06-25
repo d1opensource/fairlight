@@ -4,7 +4,7 @@ import PushStream from 'zen-push'
 import {DEFAULT_FETCH_POLICY, READ_CACHE_POLICIES} from './constants'
 import {ApiCacheMissError} from './errors'
 import {GenericCache} from './generic-cache'
-import {getParamsId} from './lib'
+import {apiRequestId} from './lib'
 import {ApiRequestManager} from './request-manager'
 import {
   ApiParseResponseJson,
@@ -14,6 +14,8 @@ import {
   ApiSerializeRequestJson,
   ResponseBody
 } from './typings'
+
+export {apiRequestId}
 
 export class Api {
   private responseBodyCache = new GenericCache<ResponseBody>()
@@ -71,7 +73,7 @@ export class Api {
       ) as Promise<TResponseBody>
     }
 
-    const cachedResponse = this.responseBodyCache.get(getParamsId(params))
+    const cachedResponse = this.responseBodyCache.get(apiRequestId(params))
     if (cachedResponse) {
       if (fetchPolicy === 'cache-and-fetch') {
         // kick off in the background
@@ -109,7 +111,7 @@ export class Api {
     params: ApiRequestParams<ApiRequestMethod, TResponseBody>,
     responseBody: TResponseBody
   ) => {
-    const paramsId = getParamsId(params)
+    const paramsId = apiRequestId(params)
     this.responseBodyCache.set(paramsId, responseBody)
     this.getCacheUpdateStream(params).next(responseBody)
   }
@@ -126,7 +128,7 @@ export class Api {
     params: ApiRequestParams<ApiRequestMethod, TResponseBody>
   ): TResponseBody | null => {
     return this.responseBodyCache.get(
-      getParamsId(params)
+      apiRequestId(params)
     ) as TResponseBody | null
   }
 
@@ -146,7 +148,7 @@ export class Api {
   private getCacheUpdateStream<TResponseBody extends ResponseBody>(
     params: ApiRequestParams<ApiRequestMethod, TResponseBody>
   ): PushStream<TResponseBody> {
-    const paramsId = getParamsId(params)
+    const paramsId = apiRequestId(params)
 
     let pushStream = this.cacheUpdateStreams.get(paramsId)
 

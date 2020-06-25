@@ -1,4 +1,4 @@
-export {Api} from './api'
+export {Api, apiRequestId} from './api'
 export * from './api/errors'
 export * from './api/typings'
 export * from './react'

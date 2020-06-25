@@ -4,7 +4,7 @@ import PushStream from 'zen-push'
 import {DEFAULT_FETCH_POLICY, DEFAULT_REQUEST_METHOD} from '../constants'
 import {ApiError} from '../errors'
 import {GenericCache} from '../generic-cache'
-import {applyHeaders, cloneHeaders, getParamsId} from '../lib'
+import {apiRequestId, applyHeaders, cloneHeaders} from '../lib'
 import {ApiRequestFetcher} from '../request-fetcher'
 import {
   ApiHeaders,
@@ -89,7 +89,7 @@ export class ApiRequestManager {
     params: ApiRequestParams<ApiRequestMethod, TResponseBody>,
     options: ApiRequestOptions
   ): Promise<TResponseBody | null> => {
-    const paramsKey = getParamsId(params)
+    const paramsKey = apiRequestId(params)
 
     // return cached promise if it exists
     const cachedRequest = this.inProgressRequestCache.get(paramsKey)
@@ -116,7 +116,7 @@ export class ApiRequestManager {
     options: ApiRequestOptions,
     id: symbol
   ): Promise<ResponseBody | null> {
-    const paramsId = getParamsId(params)
+    const paramsId = apiRequestId(params)
 
     try {
       return await this.fetchResponseBody(params, options)
@@ -147,7 +147,7 @@ export class ApiRequestManager {
    * Returns `true` if a `GET` request matches params
    */
   requestInProgress = (params: ApiRequestParams): boolean => {
-    return this.inProgressRequestCache.has(getParamsId(params))
+    return this.inProgressRequestCache.has(apiRequestId(params))
   }
 
   /**

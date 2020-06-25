@@ -1,28 +1,28 @@
-import {applyHeaders, cloneHeaders, getParamsId} from './lib'
+import {apiRequestId, applyHeaders, cloneHeaders} from './lib'
 import {ApiRequestParams} from './typings'
 
-describe('getParamsId', () => {
+describe('apiRequestId', () => {
   it('serializes basic requests', () => {
     const requestParams: ApiRequestParams = {
       method: 'GET',
       url: '/endpoint'
     }
 
-    expect(getParamsId(requestParams)).toEqual(
-      getParamsId({
+    expect(apiRequestId(requestParams)).toEqual(
+      apiRequestId({
         url: '/endpoint' // method defaults to GET
       })
     )
 
-    expect(getParamsId(requestParams)).not.toEqual(
-      getParamsId({
+    expect(apiRequestId(requestParams)).not.toEqual(
+      apiRequestId({
         ...requestParams,
         method: 'POST'
       })
     )
 
-    expect(getParamsId(requestParams)).not.toEqual(
-      getParamsId({
+    expect(apiRequestId(requestParams)).not.toEqual(
+      apiRequestId({
         ...requestParams,
         url: '/endpoint-2'
       })
@@ -36,15 +36,15 @@ describe('getParamsId', () => {
     }
 
     // empty header checks
-    expect(getParamsId(requestParams)).toEqual(
-      getParamsId({
+    expect(apiRequestId(requestParams)).toEqual(
+      apiRequestId({
         ...requestParams,
         headers: null
       })
     )
 
-    expect(getParamsId(requestParams)).toEqual(
-      getParamsId({
+    expect(apiRequestId(requestParams)).toEqual(
+      apiRequestId({
         ...requestParams,
         headers: {}
       })
@@ -52,24 +52,24 @@ describe('getParamsId', () => {
 
     // ensure header modifies the paramsId
     expect(
-      getParamsId({
+      apiRequestId({
         ...requestParams,
         headers: {
           'Content-Type': 'application/json'
         }
       })
-    ).not.toEqual(getParamsId(requestParams))
+    ).not.toEqual(apiRequestId(requestParams))
 
     // test capitalization variance
     expect(
-      getParamsId({
+      apiRequestId({
         ...requestParams,
         headers: {
           'CONTENT-TYPE': 'application/json'
         }
       })
     ).toEqual(
-      getParamsId({
+      apiRequestId({
         ...requestParams,
         headers: {
           'content-type': 'application/json'
@@ -79,7 +79,7 @@ describe('getParamsId', () => {
 
     // test order variance
     expect(
-      getParamsId({
+      apiRequestId({
         ...requestParams,
         headers: {
           'X-Authorization': 'x-token',
@@ -87,7 +87,7 @@ describe('getParamsId', () => {
         }
       })
     ).toEqual(
-      getParamsId({
+      apiRequestId({
         ...requestParams,
         headers: {
           'Content-Type': 'application/json',
@@ -104,32 +104,32 @@ describe('getParamsId', () => {
       responseType: null
     }
 
-    expect(getParamsId(requestParams)).toEqual(
-      getParamsId({
+    expect(apiRequestId(requestParams)).toEqual(
+      apiRequestId({
         ...requestParams,
         responseType: null
       })
     )
 
     expect(
-      getParamsId({
+      apiRequestId({
         ...requestParams,
         responseType: 'json'
       })
     ).toEqual(
-      getParamsId({
+      apiRequestId({
         ...requestParams,
         responseType: 'json'
       })
     )
 
     expect(
-      getParamsId({
+      apiRequestId({
         ...requestParams,
         responseType: 'blob'
       })
     ).not.toEqual(
-      getParamsId({
+      apiRequestId({
         ...requestParams,
         responseType: 'json'
       })
@@ -142,8 +142,8 @@ describe('getParamsId', () => {
         url: '/endpoint'
       }
 
-      expect(getParamsId(requestParams)).toEqual(
-        getParamsId({
+      expect(apiRequestId(requestParams)).toEqual(
+        apiRequestId({
           ...requestParams,
           successCodes
         })
@@ -156,8 +156,8 @@ describe('getParamsId', () => {
     }
 
     for (const successCodes of [[], [200], [201], [200, 201, 202]]) {
-      expect(getParamsId(requestParams)).not.toEqual(
-        getParamsId({
+      expect(apiRequestId(requestParams)).not.toEqual(
+        apiRequestId({
           ...requestParams,
           successCodes
         })
@@ -169,8 +169,8 @@ describe('getParamsId', () => {
       [201, 200],
       [200, null, 201, null]
     ]) {
-      expect(getParamsId(requestParams)).toEqual(
-        getParamsId({
+      expect(apiRequestId(requestParams)).toEqual(
+        apiRequestId({
           ...requestParams,
           successCodes
         })
@@ -185,8 +185,8 @@ describe('getParamsId', () => {
     }
 
     for (const extraKey of [null, undefined]) {
-      expect(getParamsId(requestParams)).toEqual(
-        getParamsId({
+      expect(apiRequestId(requestParams)).toEqual(
+        apiRequestId({
           ...requestParams,
           extraKey
         })
@@ -194,20 +194,20 @@ describe('getParamsId', () => {
     }
 
     expect(
-      getParamsId({
+      apiRequestId({
         ...requestParams,
         extraKey: 'test'
       })
     ).toEqual(
-      getParamsId({
+      apiRequestId({
         ...requestParams,
         extraKey: 'test'
       })
     )
 
     for (const extraKey of ['', 'one']) {
-      expect(getParamsId(requestParams)).not.toEqual(
-        getParamsId({
+      expect(apiRequestId(requestParams)).not.toEqual(
+        apiRequestId({
           ...requestParams,
           extraKey
         })
