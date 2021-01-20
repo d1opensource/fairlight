@@ -27,7 +27,7 @@ jobs:
       - run: npm run lint
       - name: Set ENV for codeclimate (pull_request)
         run: |
-          echo "GIT_BRANCH::${{ github.head_ref }}" >> $GitHUB_ENV
+          echo "GIT_BRANCH::${{ github.head_ref }}" >> $GITHUB_ENV
           echo "GIT_COMMIT_SHA::$(git rev-parse HEAD)"
         if: github.event_name == 'pull_request'
       - name: Set ENV for codeclimate (push)
