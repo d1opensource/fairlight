@@ -13,6 +13,7 @@ jobs:
       - name: Checkout (pull_request)
         if: github.event_name == 'pull_request'
         uses: actions/checkout@v2
+        run: echo "${{ github.event }}"
         with:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Checkout (push)
