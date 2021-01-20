@@ -13,7 +13,6 @@ jobs:
       - name: Checkout (pull_request)
         if: github.event_name == 'pull_request'
         uses: actions/checkout@v2
-        run: echo "${{ github.event }}"
         with:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Checkout (push)
@@ -28,13 +27,13 @@ jobs:
       - run: npm run lint
       - name: Set ENV for codeclimate (pull_request)
         run: |
-          echo "GIT_BRANCH=${{ github.head_ref }}" >> $GITHUB_ENV
-          echo "GIT_COMMIT_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+          echo "::set-env name=GIT_BRANCH::${{ github.head_ref }}"
+          echo "::set-env name=GIT_COMMIT_SHA::$(git rev-parse HEAD)"
         if: github.event_name == 'pull_request'
       - name: Set ENV for codeclimate (push)
         run: |
-          echo "GIT_BRANCH=${GITHUB_REF##*/}" >> $GITHUB_ENV
-          echo "GIT_COMMIT_SHA=$GITHUB_SHA" >> $GITHUB_ENV
+          echo "::set-env name=GIT_BRANCH::${GITHUB_REF##*/}"
+          echo "::set-env name=GIT_COMMIT_SHA::$GITHUB_SHA"
         if: github.event_name == 'push'
       - name: Code Climate Test Reporter
         uses: aktions/codeclimate-test-reporter@v1
