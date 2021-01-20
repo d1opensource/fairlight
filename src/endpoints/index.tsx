@@ -47,6 +47,19 @@ export class HttpEndpoints {
   }
 
   /**
+   * Creates a `HEAD` request.
+   *
+   * @param path A path relative to the base path.
+   * @param requestInit Additional request parameters.
+   */
+  protected static _head<TResponseBody extends ResponseBody = ResponseBody>(
+    path: string,
+    requestInit?: Omit<EndpointCreateRequestInit, 'body'>
+  ) {
+    return this._createRequest<'HEAD', TResponseBody>('HEAD', path, requestInit)
+  }
+
+  /**
    * Creates a `GET` request.
    *
    * @param path A path relative to the base path.
