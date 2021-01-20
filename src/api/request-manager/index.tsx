@@ -178,6 +178,10 @@ export class ApiRequestManager {
         successCodes: params.successCodes
       })
 
+      if (params.method === 'HEAD') {
+        return response.headers
+      }
+
       const parsedResponse: RequestFetcherResponse = {
         ...response,
         body:

@@ -19,7 +19,12 @@ it('parses application/json with charset', async () => {
       url: 'http://test.com/endpoint',
       method: 'GET'
     })
-  ).toEqual({body: {num: 12345}, bodyType: 'json', status: 200})
+  ).toEqual({
+    body: {num: 12345},
+    bodyType: 'json',
+    status: 200,
+    headers: new Headers({'content-type': 'application/json; charset=utf-8'})
+  })
 })
 
 it('does not parse the response body if it cant determine the response type', async () => {
@@ -32,7 +37,14 @@ it('does not parse the response body if it cant determine the response type', as
       url: 'http://test.com/endpoint',
       method: 'GET'
     })
-  ).toEqual({status: 200, body: null, bodyType: null})
+  ).toEqual({
+    status: 200,
+    body: null,
+    bodyType: null,
+    headers: new Headers({
+      'Content-Type': ''
+    })
+  })
 
   // unknown content type
   fetchMock.mockResponseOnce(JSON.stringify({num: 12345}), {
@@ -43,7 +55,12 @@ it('does not parse the response body if it cant determine the response type', as
       url: 'http://test.com/endpoint',
       method: 'GET'
     })
-  ).toEqual({status: 200, body: null, bodyType: null})
+  ).toEqual({
+    status: 200,
+    body: null,
+    bodyType: null,
+    headers: new Headers({'Content-Type': 'unknown'})
+  })
 })
 
 it('throws a TypeError if an invalid body is passed', async () => {

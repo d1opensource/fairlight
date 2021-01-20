@@ -1,12 +1,21 @@
-export type ApiRequestMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+export type ApiRequestMethod =
+  | 'GET'
+  | 'HEAD'
+  | 'POST'
+  | 'PUT'
+  | 'PATCH'
+  | 'DELETE'
 export type ApiHeaders = Record<string, string>
-type GetDeleteRequestMethod = Extract<ApiRequestMethod, 'GET' | 'DELETE'>
+type GetDeleteRequestMethod = Extract<
+  ApiRequestMethod,
+  'GET' | 'HEAD' | 'DELETE'
+>
 type PostPutPatchRequestMethod = Extract<
   ApiRequestMethod,
   'POST' | 'PUT' | 'PATCH'
 >
 export type RequestBody = BodyInit | object
-export type ResponseBody = Blob | object | string
+export type ResponseBody = Blob | object | string | Headers
 export type ApiResponseType = 'json' | 'text' | 'blob'
 
 interface ApiCommonRequestParams<TMethod extends ApiRequestMethod> {
@@ -110,4 +119,5 @@ export interface RequestFetcherResponse {
   body: ResponseBody | null
   bodyType: ApiResponseType | null
   status: number
+  headers: Headers
 }
