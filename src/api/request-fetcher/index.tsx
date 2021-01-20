@@ -31,16 +31,14 @@ export class ApiRequestFetcher implements RequestFetcher {
     response: Response,
     params: RequestFetcherParams
   ): Promise<RequestFetcherResponse> {
-    const {status} = response
+    const {status, headers} = response
 
     const responseType =
       params.responseType ||
-      this.inferResponseTypeUsingContentType(
-        response.headers.get('Content-Type')
-      )
+      this.inferResponseTypeUsingContentType(headers.get('Content-Type'))
 
     if (!responseType) {
-      return {body: null, bodyType: null, status}
+      return {body: null, bodyType: null, status, headers}
     }
 
     const body = await (() => {
@@ -56,7 +54,7 @@ export class ApiRequestFetcher implements RequestFetcher {
       }
     })()
 
-    return {body: body, bodyType: responseType, status}
+    return {body: body, bodyType: responseType, status, headers}
   }
 
   /**
