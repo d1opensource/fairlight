@@ -7,16 +7,6 @@ const DEFAULT_QUERY_FETCH_POLICY = 'cache-and-fetch'
 const DEFAULT_QUERY_USE_ERROR_BOUNDARY = false
 const DEFAULT_MUTATION_FETCH_POLICY = 'no-cache'
 
-interface ApiContext {
-  api: Api
-  defaults: ApiProviderDefaults
-}
-
-interface ApiProviderDefaults {
-  useApiQuery: UseApiQueryDefaults
-  useApiMutation: UseApiMutationDefaults
-}
-
 interface UseApiQueryDefaults {
   fetchPolicy: ApiRequestFetchPolicy
   useErrorBoundary: boolean
@@ -26,9 +16,19 @@ interface UseApiMutationDefaults {
   fetchPolicy: ApiRequestFetchPolicy
 }
 
+interface ApiProviderDefaults {
+  useApiQuery: UseApiQueryDefaults
+  useApiMutation: UseApiMutationDefaults
+}
+
+interface ApiContextProps {
+  api: Api
+  defaults: ApiProviderDefaults
+}
+
 const defaultApi = new Api()
 
-const DEFAULT_API_CONTEXT: ApiContext = {
+const DEFAULT_API_CONTEXT: ApiContextProps = {
   api: defaultApi,
   defaults: {
     useApiQuery: {
@@ -41,13 +41,15 @@ const DEFAULT_API_CONTEXT: ApiContext = {
   }
 }
 
-export const ApiContext = createContext<ApiContext>(DEFAULT_API_CONTEXT)
+export const ApiContext = createContext<ApiContextProps>(DEFAULT_API_CONTEXT)
 
 export interface ApiProviderProps {
   /**
    * The API instance to use
    */
   api?: Api
+
+  children: React.ReactNode
 
   /**
    * Sets the default `fetchPolicy` which is used by `useApiQuery`

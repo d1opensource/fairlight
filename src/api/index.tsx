@@ -1,4 +1,3 @@
-import Observable from 'zen-observable'
 import PushStream from 'zen-push'
 
 import {DEFAULT_FETCH_POLICY, READ_CACHE_POLICIES} from './constants'
@@ -126,7 +125,7 @@ export class Api {
    */
   readCachedResponse = <TResponseBody extends ResponseBody>(
     params: ApiRequestParams<ApiRequestMethod, TResponseBody>
-  ): TResponseBody | null => {
+  ) => {
     return this.responseBodyCache.get(
       apiRequestId(params)
     ) as TResponseBody | null
@@ -137,7 +136,7 @@ export class Api {
    */
   onCacheUpdate = <TResponseBody extends ResponseBody>(
     params: ApiRequestParams<ApiRequestMethod, TResponseBody>
-  ): Observable<TResponseBody> => {
+  ) => {
     return this.getCacheUpdateStream(params).observable
   }
 

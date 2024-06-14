@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 
 import {cleanup} from '@testing-library/react'
 import {act, renderHook} from '@testing-library/react-hooks'
@@ -17,8 +17,7 @@ beforeEach(() => {
   api = {
     onCacheUpdate: jest.fn(() => ({
       subscribe: () => {
-        const subscription = {unsubscribe: () => null}
-        return subscription
+        return {unsubscribe: () => null}
       }
     })),
     readCachedResponse: jest.fn(),
@@ -27,8 +26,9 @@ beforeEach(() => {
   } as any
 })
 
-const wrapper = ({children}) => <ApiProvider api={api}>{children}</ApiProvider>
-
+const wrapper = ({children}: {children: React.ReactNode; url: string}) => (
+  <ApiProvider api={api}>{children}</ApiProvider>
+)
 it('does not make a query if there are no params', () => {
   const {result} = renderHook(() => useApiQuery(null), {wrapper})
   expect(result.current[0]).toEqual({
@@ -97,7 +97,7 @@ describe('errors', () => {
       {wrapper}
     )
 
-    await waitForNextUpdate({suppressErrors: true})
+    await waitForNextUpdate()
 
     expect(result.error).toEqual(error)
   })
@@ -122,7 +122,7 @@ describe('errors', () => {
       }
     )
 
-    await waitForNextUpdate({suppressErrors: true})
+    await waitForNextUpdate()
 
     expect(result.error).toEqual(error)
   })
@@ -309,7 +309,7 @@ describe('cache', () => {
 
       expect(result.current[0]).toEqual({
         data: response,
-        loading: fetchPolicy === 'cache-only' ? false : true,
+        loading: fetchPolicy !== 'cache-only',
         error: null
       })
 
@@ -382,7 +382,7 @@ describe('cache', () => {
         return {unsubscribe}
       })
       const unsubscribe = jest.fn()
-      const onCacheUpdate = jest.fn((params) => ({subscribe}))
+      const onCacheUpdate = jest.fn(() => ({subscribe}))
       ;(api.onCacheUpdate as jest.Mock) = onCacheUpdate
 
       const {result, waitForNextUpdate} = renderHook(

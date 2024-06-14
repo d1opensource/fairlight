@@ -56,7 +56,7 @@ export class ApiRequestFetcher implements RequestFetcher {
       }
     })()
 
-    return {body: body, bodyType: responseType, status}
+    return {body, bodyType: responseType, status}
   }
 
   /**

@@ -1,4 +1,3 @@
-import Observable from 'zen-observable'
 import PushStream from 'zen-push'
 
 import {DEFAULT_FETCH_POLICY, DEFAULT_REQUEST_METHOD} from '../constants'
@@ -132,14 +131,14 @@ export class ApiRequestManager {
   /**
    * Configuring an error handler to be called on error
    */
-  get onReceivedResponseBody(): Observable<[ApiRequestParams, ResponseBody]> {
+  get onReceivedResponseBody() {
     return this.responseBodyStream.observable
   }
 
   /**
    * Configuring an error handler to be called on error
    */
-  get onError(): Observable<Error> {
+  get onError() {
     return this.errorStream.observable
   }
 
@@ -207,9 +206,10 @@ export class ApiRequestManager {
    * - For JSON request bodies, it is serialized to a string and
    *   sets the appropriate 'Content-Type' header.
    */
-  private getRequestHeadersAndBody(
-    params: ApiRequestParams
-  ): {headers: ApiHeaders; body: BodyInit | undefined} {
+  private getRequestHeadersAndBody(params: ApiRequestParams): {
+    headers: ApiHeaders
+    body: BodyInit | undefined
+  } {
     let headers: ApiHeaders = cloneHeaders(this.defaultHeaders)
 
     if (params.headers) {
@@ -275,5 +275,5 @@ export class ApiRequestManager {
 }
 
 function defaultDeduplicate(params: ApiRequestParams) {
-  return params.method === 'GET' ? true : false
+  return params.method === 'GET'
 }
