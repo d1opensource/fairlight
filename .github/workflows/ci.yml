@@ -12,19 +12,19 @@ jobs:
     steps:
       - name: Checkout (pull_request)
         if: github.event_name == 'pull_request'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Checkout (push)
         if: github.event_name == 'push'
-        uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+        uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 12
+          node-version: 18
           registry-url: https://registry.npmjs.org/
-      - run: npm install
-      - run: npm test -- --ci --coverage
-      - run: npm run lint
+      - run: yarn install
+      - run: yarn test -- --ci --coverage
+      - run: yarn run lint
       - name: Set ENV for codeclimate (pull_request)
         run: |
           echo "::set-env name=GIT_BRANCH::${{ github.head_ref }}"
@@ -42,10 +42,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 12
+          node-version: 18
           registry-url: https://registry.npmjs.org/
-      - run: npm install
-      - run: npm run build
+      - run: yarn install
+      - run: yarn run build
