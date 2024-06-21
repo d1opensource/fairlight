@@ -132,7 +132,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
           useApiQueryActions.failure({
             requestId,
             paramsId: paramsId as string,
-            error
+            error: error as Error
           })
         )
       }
@@ -202,7 +202,9 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
       })
       dispatch(useApiQueryActions.success({requestId, paramsId, data}))
     } catch (error) {
-      dispatch(useApiQueryActions.failure({requestId, paramsId, error}))
+      dispatch(
+        useApiQueryActions.failure({requestId, paramsId, error: error as Error})
+      )
     }
   }
 
@@ -212,8 +214,8 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
 /**
  * Returns true if the value changed since last render (true on first pass)
  */
-function useValueChanged(value): boolean {
-  const ref = useRef(null)
+function useValueChanged<T>(value: T | null): boolean {
+  const ref = useRef<T | null>(null)
 
   useEffect(() => {
     ref.current = value

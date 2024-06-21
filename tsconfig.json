@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "strict": true,
     "lib": ["es2017", "dom"],
     "declaration": true,
     "sourceMap": true,

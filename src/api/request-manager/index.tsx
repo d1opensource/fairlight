@@ -131,14 +131,14 @@ export class ApiRequestManager {
   /**
    * Configuring an error handler to be called on error
    */
-  get onReceivedResponseBody() {
+  get onReceivedResponseBody(): typeof this.responseBodyStream.observable {
     return this.responseBodyStream.observable
   }
 
   /**
    * Configuring an error handler to be called on error
    */
-  get onError() {
+  get onError(): typeof this.errorStream.observable {
     return this.errorStream.observable
   }
 
@@ -195,7 +195,7 @@ export class ApiRequestManager {
 
       return responseBody
     } catch (error) {
-      this.errorStream.next(error)
+      this.errorStream.next(error as Error)
       throw error
     }
   }

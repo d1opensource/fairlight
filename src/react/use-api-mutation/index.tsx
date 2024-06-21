@@ -38,7 +38,7 @@ export function useApiMutation<
       returnValue = await mutator(mutationApiHelpers)
     } catch (error) {
       if (params.onError) {
-        return params.onError(error, {mutationArgs})
+        return params.onError(error as Error, {mutationArgs})
       }
       throw error
     } finally {
