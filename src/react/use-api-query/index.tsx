@@ -1,4 +1,11 @@
-import {useContext, useEffect, useMemo, useReducer, useRef} from 'react'
+import {
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useReducer,
+  useRef
+} from 'react'
 
 import {apiRequestId} from '../../api'
 import {READ_CACHE_POLICIES} from '../../api/constants'
@@ -89,7 +96,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
    * - Sunscribe to cache updates
    * - Make the request
    */
-  useEffect(() => {
+  useLayoutEffect(() => {
     dispatch(useApiQueryActions.replaceState(derivedState))
 
     if (!params) {
@@ -115,7 +122,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
         })
         dispatch(
           useApiQueryActions.success({
-            requestId: requestId,
+            requestId,
             paramsId: paramsId as string,
             data
           })
@@ -123,9 +130,9 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
       } catch (error) {
         dispatch(
           useApiQueryActions.failure({
-            requestId: requestId,
+            requestId,
             paramsId: paramsId as string,
-            error
+            error: error as Error
           })
         )
       }
@@ -138,13 +145,14 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
    * Keep referential equality and only change if underlying
    * `loading`, `data`, or `error` state changes
    */
-  const returnData = useMemo((): UseApiQueryData<TResponseBody> => {
-    return {
+  const returnData = useMemo(
+    (): UseApiQueryData<TResponseBody> => ({
       loading: derivedState.loading,
       data: derivedState.data as TResponseBody | null | undefined,
       error: derivedState.error
-    }
-  }, [derivedState.loading, derivedState.data, derivedState.error])
+    }),
+    [derivedState.loading, derivedState.data, derivedState.error]
+  )
 
   /**
    * Optionally throw the error to handle in error boundary
@@ -194,7 +202,9 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
       })
       dispatch(useApiQueryActions.success({requestId, paramsId, data}))
     } catch (error) {
-      dispatch(useApiQueryActions.failure({requestId, paramsId, error}))
+      dispatch(
+        useApiQueryActions.failure({requestId, paramsId, error: error as Error})
+      )
     }
   }
 
@@ -204,7 +214,7 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
 /**
  * Returns true if the value changed since last render (true on first pass)
  */
-function useValueChanged<T extends any>(value: T | null): boolean {
+function useValueChanged<T>(value: T | null): boolean {
   const ref = useRef<T | null>(null)
 
   useEffect(() => {

@@ -161,7 +161,7 @@ describe('errors', () => {
     })
 
     api = new Api({
-      parseResponseJson: (response) => ({parsedError: response['test_error']})
+      parseResponseJson: (response) => ({parsedError: response.test_error})
     })
 
     await expect(api.request({url: '/endpoint'})).rejects.toEqual(

@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "strict": true,
     "lib": ["es2017", "dom"],
     "declaration": true,
     "sourceMap": true,
@@ -10,13 +11,12 @@
     "noUnusedLocals": true,
     "noUnusedParameters": false,
     "noImplicitReturns": true,
-    "strict": true,
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "jsx": "react",
-    "types": []
+    "types": ["node", "jest"]
   },
   "include": ["src/**/*.tsx"],
   "exclude": ["node_modules", "src/**/*.spec.tsx"]
