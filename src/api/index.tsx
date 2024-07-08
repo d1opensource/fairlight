@@ -133,6 +133,13 @@ export class Api {
   }
 
   /**
+   * Clears the entire cache
+   */
+  clearCache = () => {
+    this.responseBodyCache = new GenericCache<ResponseBody>()
+  }
+
+  /**
    * Subscribes to cache updates for a given param's response
    */
   onCacheUpdate = <TResponseBody extends ResponseBody>(
