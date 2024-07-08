@@ -36,7 +36,7 @@ jobs:
           echo "GIT_COMMIT_SHA=$GITHUB_SHA" >> $GITHUB_ENV
         if: github.event_name == 'push'
       - name: Code Climate Test Reporter
-        uses: aktions/codeclimate-test-reporter@v1
+        uses: aktions/codeclimate-test-reporter@v1.2.0
         with:
           codeclimate-test-reporter-id: e603a31c2988a01bae194f33de60d6f6f17b68cc8f36e5479f987e34d2186988
   build:
