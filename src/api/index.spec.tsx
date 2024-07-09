@@ -225,7 +225,7 @@ describe('response parsing', () => {
 })
 
 describe('fetch policies', () => {
-  test('policy behaviour', async () => {
+  it('policy behaviour', async () => {
     const responseBody = {test: 'data'}
     fetchMock.mockResponse(JSON.stringify(responseBody), {
       headers: {'content-type': 'application/json'}
@@ -288,7 +288,7 @@ describe('fetch policies', () => {
     )
   })
 
-  test('cache-and-fetch error emits an error for handling', async () => {
+  it('cache-and-fetch error emits an error for handling', async () => {
     const errorResponseBody = {error: true}
 
     fetchMock.mockResponse(JSON.stringify(errorResponseBody), {
@@ -322,6 +322,32 @@ describe('fetch policies', () => {
     expect(errorHandler).toBeCalledWith(
       new ApiError('GET', '/endpoint', 400, errorResponseBody, 'json')
     )
+  })
+
+  it('clears the entire cache', async () => {
+    const responseBody = {test: 'data'}
+    fetchMock.mockResponse(JSON.stringify(responseBody), {
+      headers: {'content-type': 'application/json'}
+    })
+
+    const params: ApiRequestParams<'GET', {}> = {
+      method: 'GET',
+      url: '/endpoint'
+    }
+
+    expect(await api.request(params, {fetchPolicy: 'fetch-first'})).toEqual(
+      responseBody
+    ) // saves to cache
+
+    expect(await api.request(params, {fetchPolicy: 'cache-only'})).toEqual(
+      responseBody
+    ) // successfully reads from cache
+
+    api.clearCache()
+
+    await expect(
+      api.request(params, {fetchPolicy: 'cache-only'})
+    ).rejects.toBeInstanceOf(ApiCacheMissError) // Cache miss after clearing
   })
 })
 
