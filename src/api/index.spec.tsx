@@ -538,3 +538,42 @@ test('manual cache read/write and listener', async () => {
 test('buildUrl', () => {
   expect(api.buildUrl('/endpoint')).toEqual('http://test.com/endpoint')
 })
+
+describe('deleteCachedResponse', () => {
+  it('removes a single cached response by params', async () => {
+    fetchMock.mockResponse(JSON.stringify({num: 1}), {
+      headers: {'content-type': 'application/json'}
+    })
+    const params: ApiRequestParams<'GET', {}> = {method: 'GET', url: '/endpoint'}
+
+    await api.request(params, {fetchPolicy: 'fetch-first'})
+    expect(api.readCachedResponse(params)).toEqual({num: 1})
+
+    api.deleteCachedResponse(params)
+
+    expect(api.readCachedResponse(params)).toBeNull()
+  })
+
+  it('is a no-op when there is no cached entry', () => {
+    const params: ApiRequestParams<'GET', {}> = {method: 'GET', url: '/endpoint'}
+
+    expect(() => api.deleteCachedResponse(params)).not.toThrow()
+    expect(api.readCachedResponse(params)).toBeNull()
+  })
+
+  it('does not affect other cached entries', async () => {
+    fetchMock.mockResponse(JSON.stringify({num: 1}), {
+      headers: {'content-type': 'application/json'}
+    })
+    const params1: ApiRequestParams<'GET', {}> = {method: 'GET', url: '/endpoint1'}
+    const params2: ApiRequestParams<'GET', {}> = {method: 'GET', url: '/endpoint2'}
+
+    await api.request(params1, {fetchPolicy: 'fetch-first'})
+    await api.request(params2, {fetchPolicy: 'fetch-first'})
+
+    api.deleteCachedResponse(params1)
+
+    expect(api.readCachedResponse(params1)).toBeNull()
+    expect(api.readCachedResponse(params2)).toEqual({num: 1})
+  })
+})

@@ -133,6 +133,15 @@ export class Api {
   }
 
   /**
+   * Removes a single cached response, identified by request params.
+   * The next `useApiQuery` or `api.request` call for the same params will
+   * fetch fresh data from the network.
+   */
+  deleteCachedResponse = (params: ApiRequestParams): void => {
+    this.responseBodyCache.del(apiRequestId(params))
+  }
+
+  /**
    * Clears the entire cache
    */
   clearCache = () => {
