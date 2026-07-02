@@ -535,6 +535,63 @@ test('manual cache read/write and listener', async () => {
   expect(onCacheUpdate).not.toBeCalled()
 })
 
+describe('maxAge', () => {
+  beforeEach(() => {
+    jest.useFakeTimers()
+  })
+  afterEach(() => {
+    jest.useRealTimers()
+  })
+
+  it('serves cached response within maxAge', async () => {
+    const responseBody = {test: 'data'}
+    fetchMock.mockResponse(JSON.stringify(responseBody), {
+      headers: {'content-type': 'application/json'}
+    })
+    const params: ApiRequestParams<'GET', {}> = {method: 'GET', url: '/endpoint'}
+
+    await api.request(params, {fetchPolicy: 'fetch-first'})
+    fetchMock.mockClear()
+
+    const result = await api.request(params, {fetchPolicy: 'cache-first', maxAge: 60_000})
+    expect(result).toEqual(responseBody)
+    expect(fetchMock).not.toBeCalled()
+  })
+
+  it('treats expired cache entry as a miss and refetches', async () => {
+    const staleBody = {test: 'stale'}
+    const freshBody = {test: 'fresh'}
+    fetchMock.mockResponseOnce(JSON.stringify(staleBody), {
+      headers: {'content-type': 'application/json'}
+    })
+    const params: ApiRequestParams<'GET', {}> = {method: 'GET', url: '/endpoint'}
+
+    await api.request(params, {fetchPolicy: 'fetch-first'})
+
+    jest.advanceTimersByTime(61_000)
+
+    fetchMock.mockResponseOnce(JSON.stringify(freshBody), {
+      headers: {'content-type': 'application/json'}
+    })
+
+    const result = await api.request(params, {fetchPolicy: 'cache-first', maxAge: 60_000})
+    expect(result).toEqual(freshBody)
+    expect(fetchMock).toBeCalledTimes(2)
+  })
+
+  it('ignores maxAge when no cached entry exists', async () => {
+    const responseBody = {test: 'data'}
+    fetchMock.mockResponseOnce(JSON.stringify(responseBody), {
+      headers: {'content-type': 'application/json'}
+    })
+    const params: ApiRequestParams<'GET', {}> = {method: 'GET', url: '/endpoint'}
+
+    const result = await api.request(params, {fetchPolicy: 'cache-first', maxAge: 60_000})
+    expect(result).toEqual(responseBody)
+    expect(fetchMock).toBeCalledTimes(1)
+  })
+})
+
 test('buildUrl', () => {
   expect(api.buildUrl('/endpoint')).toEqual('http://test.com/endpoint')
 })

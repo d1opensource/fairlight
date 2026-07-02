@@ -56,6 +56,7 @@ const [{data, loading, error}] = useApiQuery({url: `/users/${id}`})
     - [`requestInProgress(params: object)`](#requestinprogressparams-object)
     - [`writeCachedResponse(params: object, responseBody?: Blob | object | string)`](#writecachedresponseparams-object-responsebody-blob--object--string)
     - [`readCachedResponse(params: object)`](#readcachedresponseparams-object)
+    - [`deleteCachedResponse(params: object)`](#deletecachedresponseparams-object)
     - [`onCacheUpdate(params: object)`](#oncacheupdateparams-object)
     - [`setDefaultHeader(key: string, value: string)`](#setdefaultheaderkey-string-value-string)
     - [`onError`](#onerror)
@@ -261,7 +262,7 @@ Note that calling `api.request()` directly always defaults `fetchPolicy` to `'no
 
 #### Using the cache directly
 
-It can be useful to read and write directly to and from the cache. For this, you can use `Api#readCachedResponse` and `Api#writeCachedResponse`. View the [API examples](#writecachedresponseparams-object-responsebody-blob--object--string) for usage.
+It can be useful to read, write, or remove entries directly from the cache. For this, you can use `Api#readCachedResponse`, `Api#writeCachedResponse`, and `Api#deleteCachedResponse`. View the API examples for [write](#writecachedresponseparams-object-responsebody-blob--object--string), [read](#readcachedresponseparams-object), and [delete](#deletecachedresponseparams-object) for usage.
 
 #### How request cache keys are determined
 
@@ -1206,6 +1207,33 @@ Standard request params. See [Api#request()](#requestparams-object-opts-object) 
 Returns `object | Blob | string`:
 
 The cached response body, or `undefined` on cache miss.
+
+</details>
+
+#### `deleteCachedResponse(params: object)`
+
+Removes a single cached response by request params. The next `useApiQuery` or `api.request` call for the same params will fetch fresh data from the network.
+
+This is useful for cache invalidation after a mutation — delete the list cache after creating, updating, or deleting an item so navigating back to the list fetches accurate data.
+
+<details><summary>Example</summary>
+
+```jsx
+await api.request(UserEndpoints.update(1, {name: 'Jane'}))
+
+// Invalidate the list cache so the next visit fetches fresh data
+api.deleteCachedResponse(UserEndpoints.list())
+```
+
+</details>
+
+<details><summary>Details</summary>
+
+`params` fields:
+
+Standard request params. See [Api#request()](#requestparams-object-opts-object) for options.
+
+If there is no cached entry for the given params, this is a no-op.
 
 </details>
 

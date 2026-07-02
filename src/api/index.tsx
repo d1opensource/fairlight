@@ -64,7 +64,7 @@ export class Api {
     params: ApiRequestParams<ApiRequestMethod, TResponseBody>,
     options: ApiRequestOptions = {}
   ): Promise<TResponseBody> => {
-    const {fetchPolicy = DEFAULT_FETCH_POLICY} = options
+    const {fetchPolicy = DEFAULT_FETCH_POLICY, maxAge} = options
 
     if (!READ_CACHE_POLICIES.includes(fetchPolicy)) {
       return this.requestManager.getResponseBody<TResponseBody>(
@@ -73,7 +73,7 @@ export class Api {
       ) as Promise<TResponseBody>
     }
 
-    const cachedResponse = this.responseBodyCache.get(apiRequestId(params))
+    const cachedResponse = this.responseBodyCache.get(apiRequestId(params), maxAge)
     if (cachedResponse) {
       if (fetchPolicy === 'cache-and-fetch') {
         // kick off in the background

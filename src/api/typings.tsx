@@ -91,6 +91,19 @@ export interface ApiRequestOptions {
    * non-`GET` requests, but you can override here on a per-request basis.
    */
   deduplicate?: boolean
+
+  /**
+   * Maximum age of a cached response in milliseconds. If the cached entry
+   * is older than this value it is treated as a cache miss and fresh data
+   * is fetched from the server.
+   *
+   * Define this as a shared constant per endpoint so all callers agree on
+   * the same TTL:
+   * @example
+   * export const USERS_MAX_AGE = 60_000
+   * api.request(params, { fetchPolicy: 'cache-first', maxAge: USERS_MAX_AGE })
+   */
+  maxAge?: number
 }
 
 export interface RequestFetcherParams {
