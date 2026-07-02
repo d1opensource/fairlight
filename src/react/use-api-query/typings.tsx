@@ -91,6 +91,13 @@ export interface UseApiQueryOptions<
    * instead of `null`
    */
   initialData?: TResponseBody
+
+  /**
+   * Maximum age of a cached response in milliseconds. If the cached entry
+   * is older than this value it is treated as a cache miss and fresh data
+   * is fetched from the server.
+   */
+  maxAge?: number
 }
 
 export type FalsyValue = '' | 0 | false | undefined | null
