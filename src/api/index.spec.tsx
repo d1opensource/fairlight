@@ -596,41 +596,91 @@ test('buildUrl', () => {
   expect(api.buildUrl('/endpoint')).toEqual('http://test.com/endpoint')
 })
 
-describe('deleteCachedResponse', () => {
-  it('removes a single cached response by params', async () => {
+describe('deleteCachedResponsesByUrl', () => {
+  it('removes all cached responses matching a url prefix', async () => {
     fetchMock.mockResponse(JSON.stringify({num: 1}), {
       headers: {'content-type': 'application/json'}
     })
-    const params: ApiRequestParams<'GET', {}> = {method: 'GET', url: '/endpoint'}
-
-    await api.request(params, {fetchPolicy: 'fetch-first'})
-    expect(api.readCachedResponse(params)).toEqual({num: 1})
-
-    api.deleteCachedResponse(params)
-
-    expect(api.readCachedResponse(params)).toBeNull()
-  })
-
-  it('is a no-op when there is no cached entry', () => {
-    const params: ApiRequestParams<'GET', {}> = {method: 'GET', url: '/endpoint'}
-
-    expect(() => api.deleteCachedResponse(params)).not.toThrow()
-    expect(api.readCachedResponse(params)).toBeNull()
-  })
-
-  it('does not affect other cached entries', async () => {
-    fetchMock.mockResponse(JSON.stringify({num: 1}), {
-      headers: {'content-type': 'application/json'}
-    })
-    const params1: ApiRequestParams<'GET', {}> = {method: 'GET', url: '/endpoint1'}
-    const params2: ApiRequestParams<'GET', {}> = {method: 'GET', url: '/endpoint2'}
+    const params1: ApiRequestParams<'POST', {}> = {
+      method: 'POST',
+      url: '/data-services/portfolio-groups',
+      extraKey: 'body-a'
+    }
+    const params2: ApiRequestParams<'POST', {}> = {
+      method: 'POST',
+      url: '/data-services/portfolio-groups',
+      extraKey: 'body-b'
+    }
 
     await api.request(params1, {fetchPolicy: 'fetch-first'})
     await api.request(params2, {fetchPolicy: 'fetch-first'})
 
-    api.deleteCachedResponse(params1)
+    api.deleteCachedResponsesByUrl('/data-services/portfolio-groups')
 
     expect(api.readCachedResponse(params1)).toBeNull()
-    expect(api.readCachedResponse(params2)).toEqual({num: 1})
+    expect(api.readCachedResponse(params2)).toBeNull()
+  })
+
+  it('matches sub-paths and query strings of the prefix', async () => {
+    fetchMock.mockResponse(JSON.stringify({num: 1}), {
+      headers: {'content-type': 'application/json'}
+    })
+    const subPath: ApiRequestParams<'GET', {}> = {
+      method: 'GET',
+      url: '/users/1'
+    }
+    const withQuery: ApiRequestParams<'GET', {}> = {
+      method: 'GET',
+      url: '/users?page=2'
+    }
+
+    await api.request(subPath, {fetchPolicy: 'fetch-first'})
+    await api.request(withQuery, {fetchPolicy: 'fetch-first'})
+
+    api.deleteCachedResponsesByUrl('/users')
+
+    expect(api.readCachedResponse(subPath)).toBeNull()
+    expect(api.readCachedResponse(withQuery)).toBeNull()
+  })
+
+  it('does not affect cached entries with non-matching urls', async () => {
+    fetchMock.mockResponse(JSON.stringify({num: 1}), {
+      headers: {'content-type': 'application/json'}
+    })
+    const matching: ApiRequestParams<'GET', {}> = {
+      method: 'GET',
+      url: '/portfolio-groups'
+    }
+    const other: ApiRequestParams<'GET', {}> = {method: 'GET', url: '/users'}
+
+    await api.request(matching, {fetchPolicy: 'fetch-first'})
+    await api.request(other, {fetchPolicy: 'fetch-first'})
+
+    api.deleteCachedResponsesByUrl('/portfolio-groups')
+
+    expect(api.readCachedResponse(matching)).toBeNull()
+    expect(api.readCachedResponse(other)).toEqual({num: 1})
+  })
+
+  it('does not evict urls that extend the prefix without a path boundary', async () => {
+    fetchMock.mockResponse(JSON.stringify({num: 1}), {
+      headers: {'content-type': 'application/json'}
+    })
+    const archive: ApiRequestParams<'GET', {}> = {
+      method: 'GET',
+      url: '/users-archive'
+    }
+
+    await api.request(archive, {fetchPolicy: 'fetch-first'})
+
+    api.deleteCachedResponsesByUrl('/users')
+
+    expect(api.readCachedResponse(archive)).toEqual({num: 1})
+  })
+
+  it('is a no-op when no cached entries match', () => {
+    expect(() =>
+      api.deleteCachedResponsesByUrl('/no-such-endpoint')
+    ).not.toThrow()
   })
 })

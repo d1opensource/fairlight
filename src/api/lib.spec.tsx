@@ -1,5 +1,24 @@
-import {apiRequestId, applyHeaders, cloneHeaders} from './lib'
+import {
+  apiRequestId,
+  applyHeaders,
+  cloneHeaders,
+  parseApiRequestIdUrl
+} from './lib'
 import {ApiRequestParams} from './typings'
+
+describe('parseApiRequestIdUrl', () => {
+  it('extracts the url from an id created by apiRequestId', () => {
+    const requestParams: ApiRequestParams = {
+      method: 'POST',
+      url: '/data-services/portfolio-groups',
+      extraKey: JSON.stringify({page: 1})
+    }
+
+    expect(parseApiRequestIdUrl(apiRequestId(requestParams))).toEqual(
+      '/data-services/portfolio-groups'
+    )
+  })
+})
 
 describe('apiRequestId', () => {
   it('serializes basic requests', () => {

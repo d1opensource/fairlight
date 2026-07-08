@@ -27,4 +27,8 @@ export class GenericCache<TValue = any> {
   del(key: string): void {
     this.valuesByCacheKey.delete(key)
   }
+
+  keys(): IterableIterator<string> {
+    return this.valuesByCacheKey.keys()
+  }
 }

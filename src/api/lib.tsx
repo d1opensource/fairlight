@@ -19,6 +19,16 @@ export function apiRequestId(
   ])
 }
 
+/**
+ * Extracts the request `url` from an id created by `apiRequestId`.
+ *
+ * Keep this in sync with the array shape serialized in `apiRequestId`.
+ */
+export function parseApiRequestIdUrl(id: string): string {
+  const [, url] = JSON.parse(id) as [string, string]
+  return url
+}
+
 function serializeHeaders(paramHeaders?: ApiHeaders): string {
   if (!paramHeaders) {
     return ''
