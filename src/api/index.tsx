@@ -136,8 +136,13 @@ export class Api {
    * Removes all cached responses whose request `url` matches the given
    * prefix. Use this when the exact request params cannot be reconstructed
    * at the call site — for example, cache keys that include a serialized
-   * request body via `extraKey`. The next `useApiQuery` or `Api#request`
-   * call for any matching request will fetch fresh data from the network.
+   * request body via `extraKey`.
+   *
+   * This is lazy invalidation: it does not notify `onCacheUpdate`
+   * subscribers, so components already mounted via `useApiQuery` keep
+   * showing their current data until they refetch. The next `useApiQuery`
+   * mount or `Api#request` call for any matching request will fetch fresh
+   * data from the network.
    *
    * Matching stops at path/query boundaries: a prefix of `/users` matches
    * `/users`, `/users/1`, and `/users?page=2`, but not `/users-archive`.

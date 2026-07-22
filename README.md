@@ -1212,7 +1212,9 @@ The cached response body, or `null` on cache miss.
 
 #### `deleteCachedResponsesByUrl(urlPrefix: string)`
 
-Removes **all** cached responses whose request `url` matches the given prefix. The next `useApiQuery` or `api.request` call for any matching request will fetch fresh data from the network.
+Removes **all** cached responses whose request `url` matches the given prefix.
+
+This is lazy invalidation: it does **not** notify `onCacheUpdate` subscribers, so components already mounted via `useApiQuery` keep showing their current data until they refetch. The next `useApiQuery` mount or `api.request` call for any matching request will fetch fresh data from the network.
 
 This is useful for cache invalidation after a mutation — evict the cached list responses after creating, updating, or deleting an item so navigating back to the list fetches accurate data. Matching by url (rather than by request params) also covers cache keys that cannot be reconstructed at the call site — most commonly keys that include a serialized request body via `extraKey`, which only the original caller can produce.
 
