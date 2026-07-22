@@ -118,7 +118,8 @@ export function useApiQuery<TResponseBody extends ResponseBody>(
       try {
         const data = await api.request(params, {
           fetchPolicy,
-          deduplicate: opts.deduplicate
+          deduplicate: opts.deduplicate,
+          maxAge: opts.maxAge
         })
         dispatch(
           useApiQueryActions.success({

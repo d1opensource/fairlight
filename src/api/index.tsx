@@ -4,7 +4,7 @@ import PushStream from 'zen-push'
 import {DEFAULT_FETCH_POLICY, READ_CACHE_POLICIES} from './constants'
 import {ApiCacheMissError} from './errors'
 import {GenericCache} from './generic-cache'
-import {apiRequestId} from './lib'
+import {apiRequestId, parseApiRequestIdUrl} from './lib'
 import {ApiRequestManager} from './request-manager'
 import {
   ApiParseResponseJson,
@@ -64,7 +64,7 @@ export class Api {
     params: ApiRequestParams<ApiRequestMethod, TResponseBody>,
     options: ApiRequestOptions = {}
   ): Promise<TResponseBody> => {
-    const {fetchPolicy = DEFAULT_FETCH_POLICY} = options
+    const {fetchPolicy = DEFAULT_FETCH_POLICY, maxAge} = options
 
     if (!READ_CACHE_POLICIES.includes(fetchPolicy)) {
       return this.requestManager.getResponseBody<TResponseBody>(
@@ -73,7 +73,7 @@ export class Api {
       ) as Promise<TResponseBody>
     }
 
-    const cachedResponse = this.responseBodyCache.get(apiRequestId(params))
+    const cachedResponse = this.responseBodyCache.get(apiRequestId(params), maxAge)
     if (cachedResponse) {
       if (fetchPolicy === 'cache-and-fetch') {
         // kick off in the background
@@ -122,7 +122,7 @@ export class Api {
    * The main reason you would use this over `Api#request` with a cached
    * fetch policy is that this runs synchronously.
    *
-   * Note that if there is a cache miss, it will return `undefined`
+   * Note that if there is a cache miss, it will return `null`
    */
   readCachedResponse = <TResponseBody extends ResponseBody>(
     params: ApiRequestParams<ApiRequestMethod, TResponseBody>
@@ -130,6 +130,41 @@ export class Api {
     return this.responseBodyCache.get(
       apiRequestId(params)
     ) as TResponseBody | null
+  }
+
+  /**
+   * Removes all cached responses whose request `url` matches the given
+   * prefix. Use this when the exact request params cannot be reconstructed
+   * at the call site — for example, cache keys that include a serialized
+   * request body via `extraKey`.
+   *
+   * This is lazy invalidation: it does not notify `onCacheUpdate`
+   * subscribers, so components already mounted via `useApiQuery` keep
+   * showing their current data until they refetch. The next `useApiQuery`
+   * mount or `Api#request` call for any matching request will fetch fresh
+   * data from the network.
+   *
+   * Matching stops at path/query boundaries: a prefix of `/users` matches
+   * `/users`, `/users/1`, and `/users?page=2`, but not `/users-archive`.
+   */
+  deleteCachedResponsesByUrl = (urlPrefix: string): void => {
+    for (const key of this.responseBodyCache.keys()) {
+      const url = parseApiRequestIdUrl(key)
+
+      if (!url.startsWith(urlPrefix)) {
+        continue
+      }
+
+      const charAfterPrefix = url.charAt(urlPrefix.length)
+
+      if (
+        charAfterPrefix === '' ||
+        charAfterPrefix === '/' ||
+        charAfterPrefix === '?'
+      ) {
+        this.responseBodyCache.del(key)
+      }
+    }
   }
 
   /**

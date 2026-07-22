@@ -56,6 +56,7 @@ const [{data, loading, error}] = useApiQuery({url: `/users/${id}`})
     - [`requestInProgress(params: object)`](#requestinprogressparams-object)
     - [`writeCachedResponse(params: object, responseBody?: Blob | object | string)`](#writecachedresponseparams-object-responsebody-blob--object--string)
     - [`readCachedResponse(params: object)`](#readcachedresponseparams-object)
+    - [`deleteCachedResponsesByUrl(urlPrefix: string)`](#deletecachedresponsesbyurlurlprefix-string)
     - [`onCacheUpdate(params: object)`](#oncacheupdateparams-object)
     - [`setDefaultHeader(key: string, value: string)`](#setdefaultheaderkey-string-value-string)
     - [`onError`](#onerror)
@@ -261,7 +262,7 @@ Note that calling `api.request()` directly always defaults `fetchPolicy` to `'no
 
 #### Using the cache directly
 
-It can be useful to read and write directly to and from the cache. For this, you can use `Api#readCachedResponse` and `Api#writeCachedResponse`. View the [API examples](#writecachedresponseparams-object-responsebody-blob--object--string) for usage.
+It can be useful to read, write, or remove entries directly from the cache. For this, you can use `Api#readCachedResponse`, `Api#writeCachedResponse`, and `Api#deleteCachedResponsesByUrl`. View the API examples for [write](#writecachedresponseparams-object-responsebody-blob--object--string), [read](#readcachedresponseparams-object), and [delete](#deletecachedresponsesbyurlurlprefix-string) for usage.
 
 #### How request cache keys are determined
 
@@ -1205,7 +1206,40 @@ Standard request params. See [Api#request()](#requestparams-object-opts-object) 
 
 Returns `object | Blob | string`:
 
-The cached response body, or `undefined` on cache miss.
+The cached response body, or `null` on cache miss.
+
+</details>
+
+#### `deleteCachedResponsesByUrl(urlPrefix: string)`
+
+Removes **all** cached responses whose request `url` matches the given prefix.
+
+This is lazy invalidation: it does **not** notify `onCacheUpdate` subscribers, so components already mounted via `useApiQuery` keep showing their current data until they refetch. The next `useApiQuery` mount or `api.request` call for any matching request will fetch fresh data from the network.
+
+This is useful for cache invalidation after a mutation — evict the cached list responses after creating, updating, or deleting an item so navigating back to the list fetches accurate data. Matching by url (rather than by request params) also covers cache keys that cannot be reconstructed at the call site — most commonly keys that include a serialized request body via `extraKey`, which only the original caller can produce.
+
+Matching stops at path/query boundaries: a prefix of `/users` matches `/users`, `/users/1`, and `/users?page=2`, but **not** `/users-archive`.
+
+<details><summary>Example</summary>
+
+```jsx
+await api.request(UserEndpoints.update(1, {name: 'Jane'}))
+
+// Evict every cached response under this url — the plain list,
+// filtered/paginated variants, and POST-based query endpoints
+// whose cache keys embed the serialized request body
+api.deleteCachedResponsesByUrl('/users')
+```
+
+</details>
+
+<details><summary>Details</summary>
+
+`urlPrefix`:
+
+The request `url` prefix to match, as passed to `Api#request` (before `baseUrl` is applied).
+
+If no cached entries match, this is a no-op.
 
 </details>
 
